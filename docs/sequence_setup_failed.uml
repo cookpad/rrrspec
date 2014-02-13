@@ -1,0 +1,37 @@
+@startuml
+box "Master"
+  database Database
+  participant Arbiter
+end box
+box "Worker"
+  participant Slave
+  participant RespawnedSlave
+  participant Worker
+end box
+activate Worker
+
+== Testing ==
+
+create Slave
+Worker->Slave : Spawn slaves
+activate Slave
+Slave->Slave : Slave setup
+destroy Slave
+
+Worker->Database : Add a slave log
+create RespawnedSlave
+Worker->RespawnedSlave : Respawn a slave
+activate RespawnedSlave
+RespawnedSlave->RespawnedSlave : Slave setup
+
+...
+
+alt slaves are frequently failed
+  Worker->Arbiter : Fail request
+  Arbiter->Database : Mark the taskset as failed
+  Database->Worker : Notify the taskset is marked as failed
+  Worker->RespawnedSlave : Kill slaves
+  deactivate RespawnedSlave
+end alt
+
+@enduml

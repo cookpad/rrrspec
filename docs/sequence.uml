@@ -1,0 +1,82 @@
+@startuml
+participant Client
+box "Master"
+  participant Dispatcher
+  database Database
+  participant RSyncServer
+  participant Arbiter
+end box
+box "Worker"
+  participant Slave
+  participant Worker
+end box
+activate Worker
+
+Client->Database : Create a taskset
+Client->Database : Enqueue tasks
+Client->Dispatcher : Taskset request
+Dispatcher->Worker : Taskset dispatch
+Worker->Database : Log the worker participation
+
+== RSync ==
+
+Worker<->RSyncServer : RSync
+
+== Setup ==
+
+Worker->Worker : Worker setup
+Worker->Database : Add a worker setup log
+
+alt setup failed
+  Worker->Arbiter : Fail request
+  Arbiter->Database : Mark the taskset as failed
+  Database->Worker : Notify the taskset is marked as failed
+end alt
+
+== Testing ==
+
+create Slave
+Worker->Slave : Spawn slaves
+activate Slave
+Slave->Slave : Slave setup
+
+...
+
+Slave->Database : Dequeue a task
+Database-->Slave : Return a task
+
+Slave->Database : Add a trial
+Slave->Slave : Execute a task
+Slave->Database : Add a trial result
+Slave->Arbiter : Notify the trial result
+
+Arbiter->Database : Query the trial result
+Database-->Arbiter : Respond to the query
+
+alt passed or pending
+  Arbiter->Database : Mark the task as finished
+else retry needed
+  Arbiter->Database : Enqueue the task
+else no more retries
+  Arbiter->Database : Mark the task as failed
+end alt
+
+...
+
+Slave->Database : Dequeue a task
+Database-->Slave : No tasks left
+Slave->Arbiter : Check request
+
+Arbiter->Arbiter : Check whether all tasks are finished
+alt some tasks are left
+  Arbiter->Database : Enqueue the tasks
+end alt
+Arbiter->Database : Mark the taskset as finished
+Database->Worker : Notify the taskset is marked as finished
+Worker->Slave : Kill slaves
+deactivate Slave
+Worker->Database : Add slave logs
+
+Client->Database : Query the status of the taskset
+Database-->Client : Respond to the query
+@enduml

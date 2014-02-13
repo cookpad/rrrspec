@@ -1,0 +1,33 @@
+!!!
+%html
+  %head
+    %meta{charset: 'utf-8', 'http-equiv' => 'Content-Type', content: 'text/html'}
+    %title User - RRRSpec
+    %script{src: '//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js', type: 'text/javascript'}
+    != css :application, :media => 'screen'
+    != js :user
+  %body
+    :javascript
+      SERVER_ADDR = "#{webdis_addr}"
+
+    %nav.navbar.navbar-inverse.navbar-fixed-top#navbar
+      .container
+        .navbar-header
+          %a.navbar-brand{href: '/'}
+            RRRSpec
+
+    .container
+      %h2 Tasksets
+      %table.table#tasksets
+        %thead
+          %tr
+            %th Name
+            %th Status
+            %th Succeeded
+            %th Failed
+            %th Created
+            %th Machine
+            %th RSync
+            %th Setup
+            %th RSpec
+            %th Total

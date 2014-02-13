@@ -1,0 +1,124 @@
+body
+  padding-top: 20px
+
+
+.log
+  word-wrap: normal
+  white-space: pre
+  overflow-x: scroll
+
+.tasksets
+  ul
+    list-style-type: none
+    padding-left: 0
+
+    li
+      display: inline-block
+
+  .taskset-status
+    width: 7em
+    text-transform: uppercase
+  .username
+    width: 8em
+    padding-right: 2em
+
+.taskset
+  .head
+    .panel-heading
+      .name
+        font-size: x-large
+        overflow: hidden
+        text-overflow: ellipsis
+        white-space: nowrap
+        float: left
+        width: 80%
+
+      .status
+        font-size: large
+        width: 20%
+        text-transform: uppercase
+        float: left
+
+  .tasklist-list, .slaves-list, .worker-logs-list
+    > *
+      padding: 0
+
+    .list-group-item > *
+      padding: 10px 15px
+
+  .tasklist, .worker-logs, .slaves
+    > .panel-heading
+      cursor: pointer
+      font-size: large
+      &:hover
+        color: darken(#428bca, 15%)
+        border-color: #428bca
+
+  .tasklist
+    .taskstatus
+      text-align: center
+
+    .tasklist-header, .tasklist-item
+      list-style-type: none
+
+      li
+        display: inline-block
+
+      .taskstatus, .trial-count, .estimate-sec
+        width: 6em
+        text-align: center
+
+      .file
+        text-align: left
+        text-overflow: ellipsis
+
+    .header
+      cursor: pointer
+
+    .running .header
+      background-color: #f5f5f5
+      &:hover
+        background-color: darken(#f5f5f5, 20%)
+    .passed .header
+      background-color: #dff0d8
+      &:hover
+        background-color: darken(#dff0d8, 20%)
+    .pending .header
+      background-color: #fcf8e3
+      &:hover
+        background-color: darken(#fcf8e3, 20%)
+    .failed .header
+      background-color: #f2dede
+      &:hover
+        background-color: darken(#f2dede, 20%)
+
+    .tasklist-item
+      .taskstatus
+        text-transform: uppercase
+
+  .worker-logs
+    .header
+      cursor: pointer
+
+      &:hover
+        color: darken(#428bca, 15%)
+        text-decoration: underline
+
+  .slaves
+    .exit-status
+      text-transform: uppercase
+
+    .header
+      cursor: pointer
+
+      &:hover
+        color: darken(#428bca, 15%)
+        text-decoration: underline
+
+    .normal .header
+      background-color: #dff0d8
+    .timeout .header
+      background-color: #fcf8e3
+    .failure .header
+      background-color: #f2dede
+

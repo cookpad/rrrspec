@@ -1,0 +1,73 @@
+@startuml
+
+ActiveTaskset o-- Taskset
+
+class Taskset {
+  rsync_name : String
+  setup_command : String
+  slave_command : String
+  worker_type : String
+  max_workers : Integer
+  max_trials : Integer
+  taskset_class : String
+  unknown_spec_timeout_sec : Integer
+  least_timeout_sec : Integer
+  created_at : Time
+
+  status : nullable {'running', 'succeeded', 'cancelled', 'failed'}
+  finished_at : nullable Time
+  succeeded_count : Integer
+  failed_count : Integer
+  log : String
+}
+
+Taskset *-- Slave
+Taskset *-- WorkerLog
+Taskset *-- Task
+Taskset *-- TaskQueue
+
+class TaskQueue {
+}
+
+TaskQueue o-- Task
+
+class Task {
+  status : nullable {'passed', 'pending', 'failed'}
+  estimate_sec : nullable Integer
+  spec_file : String
+}
+
+Task *-- Trial
+
+class Trial {
+  started_at : nullable Time
+  finished_at : nullable Time
+  status : nullable {'passed', 'pending', 'failed', 'error', 'timeout'}
+  stdout : nullable String
+  stderr : nullable String
+  passed : nullable Integer
+  pending : nullable Integer
+  failed : nullable Integer
+}
+
+class Slave {
+  status : nullable {'normal_exit', 'timeout_exit', 'failure_exit'}
+}
+
+Slave -- Trial
+Slave -- Worker
+
+class WorkerLog {
+  started_at : Time
+  rsync_finished_at : nullable Time
+  setup_finished_at : nullable Time
+  finished_at : nullable Time
+}
+
+WorkerLog -- Worker
+
+class Worker {
+  worker_type : String
+}
+
+@enduml

@@ -1,0 +1,4 @@
+guard 'livereload' do
+  watch(%r{^\.rb})
+  watch(%r{views/.*})
+end

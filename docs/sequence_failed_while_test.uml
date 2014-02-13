@@ -1,0 +1,57 @@
+@startuml
+box "Master"
+  database Database
+  participant Arbiter
+end box
+box "Worker"
+  participant Slave
+  participant RespawnedSlave
+  participant Worker
+end box
+activate Worker
+
+== Testing ==
+
+create Slave
+Worker->Slave : Spawn slaves
+activate Slave
+Slave->Slave : Slave setup
+
+...
+
+Slave->Database : Dequeue a task
+Database-->Slave : Return a task
+
+Slave->Database : Add a trial
+Slave->Slave : Execute a task
+Slave->Database : Add a trial result
+destroy Slave
+
+Worker->Database : Query the trial results of the failed slave
+Database-->Worker : Respond to the query
+Worker->Database : Mark the trials of the failed slave as error if they haven't been finished yet
+Worker->Arbiter : Notify the trial results of the failed slave
+
+Arbiter->Database : Query the trial result
+Database-->Arbiter : Respond to the query
+
+alt passed or pending
+  Arbiter->Database : Mark the task as finished
+else retry needed
+  Arbiter->Database : Enqueue the task
+  note left of Arbiter
+    Lost tasks and trials are recovered here.
+  end note
+else no more retries
+  Arbiter->Database : Mark the task as failed
+end alt
+
+Worker->Database : Add a slave log of the failed one
+create RespawnedSlave
+Worker->RespawnedSlave : Respawn a slave
+activate RespawnedSlave
+RespawnedSlave->RespawnedSlave : Slave setup
+
+...
+
+@enduml

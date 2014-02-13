@@ -1,0 +1,161 @@
+!!!
+%html
+  %head
+    %meta{charset: 'utf-8', 'http-equiv' => 'Content-Type', content: 'text/html'}
+    %title Taskset - RRRSpec
+    != css :application
+    != js :tasksets
+  %body
+    #notfound-modal.modal.fade
+      .modal-dialog
+        .modal-content
+          .modal-body
+            Not found
+
+    .taskset.container.hidden
+      .head.panel.panel-default
+
+      .progressbars
+        %h5 FILES
+        .progress.spec-progress
+          .progress-bar.spec-progress-bar
+          .progress-bar.progress-bar-success.passed-spec-bar
+          .progress-bar.progress-bar-warning.pending-spec-bar
+          .progress-bar.progress-bar-danger.failed-spec-bar
+
+        %h5 EXAMPLES
+        .progress.example-progress
+          .progress-bar.progress-bar-success.passed-example-bar
+          .progress-bar.progress-bar-warning.pending-example-bar
+          .progress-bar.progress-bar-danger.failed-example-bar
+
+      .panel.panel-default.tasklist
+        .panel-heading FAILED TASKS
+        %ul.list-group.tasklist-list
+          %li.list-group-item
+            %ul.tasklist-header
+              %li.taskstatus Status
+              %li.file File
+              %li.pull-right.trial-count Trials
+              %li.pull-right.estimate-sec Avg.
+
+      .panel.panel-default.worker-logs
+        .panel-heading WORKERS
+        %ul.list-group.worker-logs-list
+
+      .panel.panel-default.slaves
+        .panel-heading SLAVES
+        %ul.list-group.slaves-list
+
+      %script#head-template{type: 'text/template'}
+        .panel-heading.clearfix
+          %h4.panel-title
+            %a.name{data: {toggle: 'collapse'}, href: '#taskset-info'} {{key}}
+          %span.label.status {{status}}
+        #taskset-info.panel-collapse.collapse
+          .panel-body
+            %dl.dl-horizontal
+              %dt Name
+              %dd.name {{key}}
+              %dt Status
+              %dd.status {{status}}
+              %dt Created
+              %dd.created-at {{created_at}}
+              %dt Finished
+              %dd.finished-at {{finished_at}} ({{duration}})
+              %dt RSync Name
+              %dd.rsync-name {{rsync_name}}
+              %dt Max Trials
+              %dd.max-trials {{max_trials}}
+              %dt Max Workers
+              %dd.max-workers {{max_workers}}
+              %dt Unknown spec timeout sec
+              %dd.unknown-spec-timeout-sec {{unknown_spec_timeout_sec}}
+              %dt Least timeout sec
+              %dd.least-timeout-sec {{least_timeout_sec}}
+              %dt Taskset class
+              %dd.taskset-class {{taskset_class}}
+              %dt Worker type
+              %dd.worker-type {{worker_type}}
+
+            %h5 SETUP COMMAND
+            %pre.setup-command {{setup_command}}
+
+            %h5 SLAVE COMMAND
+            %pre.slave-command {{slave_command}}
+
+            %h5 LOG
+            %pre.log.pre-scrollable {{log}}
+
+      %script#tasklist-template{type: 'text/template'}
+        %ul.tasklist-item.header
+          %li.taskstatus {{status}}
+          %li.file {{spec_file}}
+          %li.pull-right.trial-count {{trials.length}}
+          %li.pull-right.estimate-sec {{estimate_sec}}
+        .body.collapse.trials
+
+      %script#trial-template{type: 'text/template'}
+        .panel-heading
+          .panel-title {{key}}
+        %dl.dl-horizontal
+          %dt Status
+          %dd {{status}}
+          %dt Started
+          %dd {{#started_at}}{{started_at}}{{/started_at}}
+          %dt Finished
+          %dd {{#finished_at}}{{finished_at}} ({{duration}}){{/finished_at}}
+          %dt Slave
+          %dd
+            %a{href: "#slave/{{slave.key}}"} {{slave.key}}
+          %dt Passed
+          %dd {{passed}}
+          %dt Pending
+          %dd {{pending}}
+          %dt Failed
+          %dd {{failed}}
+
+        %h5 STDOUT
+        %pre.log.pre-scrollable
+          {{stdout}}
+
+        %h5 STDERR
+        %pre.log.pre-scrollable
+          {{stderr}}
+
+
+      %script#worker-log-template{type: 'text/template'}
+        .header {{ key }}
+        .body.collapse
+          %dl.dl-horizontal
+            %dt Name
+            %dd {{key}}
+            %dt Started
+            %dd {{started_at}}
+            %dt RSync Finished
+            %dd {{#rsync_finished_at}}{{rsync_finished_at}} ({{rsync_duration}}){{/rsync_finished_at}}
+            %dt Setup Finished
+            %dd {{#setup_finished_at}}{{setup_finished_at}} ({{setup_duration}}){{/setup_finished_at}}
+            %dt Finished
+            %dd {{#finished_at}}{{finished_at}} ({{test_duration}}){{/finished_at}}
+
+          %h5 LOG
+          %pre.log.pre-scrollable
+            {{log}}
+
+      %script#slave-template{type: 'text/template'}
+        .header
+          {{key}}
+          .exit-status.pull-right
+            {{status}}
+        .body.collapse
+          %h5 TRIALS
+          %ol
+            {{#trials}}
+            %li
+              %a{href: "#trial/{{encoded_key}}"} {{key}}
+            {{/trials}}
+
+          %h5 LOG
+          %pre.log.pre-scrollable
+            {{log}}

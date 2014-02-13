@@ -1,0 +1,46 @@
+!!!
+%html
+  %head
+    %meta{charset: 'utf-8', 'http-equiv' => 'Content-Type', content: 'text/html'}
+    %title RRRSpec
+    != css :application
+    != js :index
+  %body
+    .index.container
+      .panel.panel-default.active-tasksets
+        .panel-heading
+          .panel-title Active Tasksets
+        %ul.list-group.tasksets
+
+    .index.container
+      .panel.panel-default.recent-tasksets
+        .panel-heading
+          .panel-title Recent Tasksets
+        %ul.list-group.tasksets
+        %ul.pager
+          %li.previous
+            %a{href: "#"} &larr; Newer
+          %li.next
+            %a{href: "#"}Older &rarr;
+
+    .index.container
+      .panel.panel-default.slave-failed-tasksets
+        .panel-heading
+          .panel-title Slave Failed Tasksets
+        %ul.list-group.tasksets
+        %ul.pager
+          %li.previous
+            %a{href: "#"} &larr; Newer
+          %li.next
+            %a{href: "#"}Older &rarr;
+
+    %script#taskset-template{type: 'text/template'}
+      %ul
+        %li.taskset-status
+          {{status}}
+        %li
+          %a{href: "/tasksets/{{key}}"} {{key}}
+        %li.pull-right
+          {{#created_at}}{{created_at}} ({{created_at_humanized}}){{/created_at}}
+        %li.username.pull-right
+          {{rsync_name}}
