@@ -10,6 +10,20 @@ RRRSpec is used in production as a CI service, running 60+ RSpec processes
 concurrently, and it undergoes those failures, which include lots of `rb_bug`s,
 assertion errors, and segmentation faults.
 
+## Features
+
+* Automatic resume on process or machine failures
+* RSpec integration
+* Captured stdout/stderr per tests
+* Automatic retrial of failed tests
+* Optimization of the test execution order
+* Speculative execution of long-running tests
+* Severe timeout of stuck processes
+
+Some considerations on creating RRRSpec are described in DESIGN.md, hoping it
+helps other developers writing other distributed test execution services avoid
+common pitfalls.
+
 ## Installation
 
 ### Client
