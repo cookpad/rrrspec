@@ -33,4 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rspec", ">= 2.14.1"
   spec.add_dependency "thor"
   spec.add_dependency "uuidtools"
+  spec.add_dependency "tzinfo"
 end

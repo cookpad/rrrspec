@@ -35,6 +35,7 @@ Add this line to your application's Gemfile:
 Create '.rrrspec'
 
     RRRSpec.configure(:client) do |conf|
+      Time.zone_default = Time.find_zone('Asia/Tokyo')
       conf.redis = { host: 'redisserver.local', port: 6379 }
 
       conf.packaging_dir = `git rev-parse --show-toplevel`.strip
@@ -78,6 +79,7 @@ Install 'rrrspec-server'
 Create 'rrrspec-server-config.rb'
 
     RRRSpec.configure(:server) do |conf|
+      ActiveRecord::Base.default_timezone = :local
       conf.redis = { host: 'redisserver.local', port: 6379 }
 
       conf.rsync_server = 'rsyncserver.local'
