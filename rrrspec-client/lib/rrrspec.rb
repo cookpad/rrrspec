@@ -3,7 +3,7 @@ require 'active_support/core_ext'
 require 'active_support/time'
 require 'socket'
 require 'logger'
-Time.zone_default = Time.find_zone!('Asia/Tokyo')
+Time.zone_default = Time.find_zone!(Time.now.zone)
 
 require 'rrrspec/configuration'
 require 'rrrspec/redis_models'
