@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+# Specify your gem's dependencies in rrrspec.gemspec
+gem 'rrrspec-client', path: '../'
+gem 'rrrspec-server', path: '../'
+gem 'rrrspec-web', path: '../'
+gemspec
