@@ -8,11 +8,13 @@ module RRRSpec
         has_many :slaves
         has_many :tasks
 
-        scope :full, includes(
-          :tasks => [{:trials => [:task, :slave]}, :taskset],
-          :slaves => [:trials],
-          :worker_logs => [:taskset]
-        )
+        def self.full
+          includes(
+            :tasks => [{:trials => [:task, :slave]}, :taskset],
+            :slaves => [:trials],
+            :worker_logs => [:taskset]
+          )
+        end
 
         def as_nodetail_json
           as_json(except: :id)
