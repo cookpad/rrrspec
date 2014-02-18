@@ -3,7 +3,7 @@ require 'active_support/core_ext'
 require 'active_support/time'
 require 'socket'
 require 'logger'
-Time.zone_default = Time.find_zone!(Time.now.zone)
+Time.zone_default = Time.find_zone('UTC')
 
 require 'rrrspec/configuration'
 require 'rrrspec/redis_models'
@@ -96,7 +96,7 @@ module RRRSpec
     end
 
     def write(string)
-      now = Time.now
+      now = Time.zone.now
       @obj.append_log(now.strftime("%F %T ") + string + "\n")
     end
   end

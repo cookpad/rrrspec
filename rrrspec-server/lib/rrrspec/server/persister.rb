@@ -4,7 +4,7 @@ require 'active_support/inflector'
 ActiveSupport::Inflector::Inflections.instance.singular('Slaves', 'Slave')
 ActiveSupport::Inflector::Inflections.instance.singular('slaves', 'slave')
 ActiveRecord::Base.include_root_in_json = false
-ActiveRecord::Base.default_timezone = :local
+ActiveRecord::Base.default_timezone = :utc
 
 module RRRSpec
   module Server
