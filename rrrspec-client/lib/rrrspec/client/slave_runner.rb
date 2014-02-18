@@ -1,5 +1,6 @@
 require 'set'
 require 'extreme_timeout'
+require 'timeout'
 
 module RRRSpec
   module Client
@@ -9,6 +10,7 @@ module RRRSpec
       TASKQUEUE_TASK_TIMEOUT = -1
       TASKQUEUE_ARBITER_TIMEOUT = 20
       TIMEOUT_EXITCODE = 42
+      class SoftTimeoutException < Exception; end
 
       def initialize(slave, working_dir, taskset_key)
         @slave = slave
@@ -23,6 +25,18 @@ module RRRSpec
 
       def work_loop
         loop { work }
+      end
+
+      def spec_timeout_sec(task)
+        if task.estimate_sec == nil
+          soft_timeout_sec = @unknown_spec_timeout_sec
+          hard_timeout_sec = @unknown_spec_timeout_sec + 30
+        else
+          estimate_sec = task.estimate_sec
+          soft_timeout_sec = estimate_sec * 2
+          hard_timeout_sec = estimate_sec * 3
+        end
+        return [soft_timeout_sec, @least_timeout_sec].max, [hard_timeout_sec, @least_timeout_sec].max
       end
 
       def work
@@ -50,34 +64,24 @@ module RRRSpec
             return
           end
 
-          if task.estimate_sec == nil
-            timeout_sec = @unknown_spec_timeout_sec
-          else
-            timeout_sec = task.estimate_sec * 2
-          end
-          timeout_sec = [timeout_sec, @least_timeout_sec].max
+          soft_timeout_sec, hard_timeout_sec = spec_timeout_sec(task)
 
           formatter = RedisReportingFormatter.new
           trial.start
           status, outbuf, errbuf = ExtremeTimeout::timeout(
-            timeout_sec, TIMEOUT_EXITCODE
+            hard_timeout_sec, TIMEOUT_EXITCODE
           ) do
-            @rspec_runner.run(formatter)
-          end
-
-          if status
-            if formatter.failed != 0
-              stat = 'failed'
-            elsif formatter.pending != 0
-              stat = 'pending'
-            else
-              stat = 'passed'
+            Timeout::timeout(soft_timeout_sec, SoftTimeoutException) do
+              @rspec_runner.run(formatter)
             end
-            trial.finish(stat, outbuf, errbuf,
+          end
+          if status
+            trial.finish(formatter.status, outbuf, errbuf,
                          formatter.passed, formatter.pending, formatter.failed)
           else
             trial.finish('error', outbuf, errbuf, nil, nil, nil)
           end
+
           ArbiterQueue.trial(trial)
         end
       end
@@ -89,6 +93,7 @@ module RRRSpec
           @passed = 0
           @pending = 0
           @failed = 0
+          @timeout = false
         end
 
         def example_passed(example)
@@ -101,6 +106,21 @@ module RRRSpec
 
         def example_failed(example)
           @failed += 1
+          if example.exception.is_a?(SoftTimeoutException)
+            @timeout = true
+          end
+        end
+
+        def status
+          if @timeout
+            'timeout'
+          elsif @failed != 0
+            'failed'
+          elsif @pending != 0
+            'pending'
+          else
+            'passed'
+          end
         end
       end
     end
