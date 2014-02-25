@@ -72,7 +72,7 @@ module RRRSpec
             p_slave = Persistence::Slave.new(h)
             p_slave.taskset_id = p_taskset.id
             if 65000 < p_slave.log.size
-              p_slave.log = p_slave.log[0,65000] + '...(too long, shortened)'
+              p_slave.log = "#{p_slave.log.mb_chars.limit(65000)}...(too long, truncated)"
             end
             p_slave
           end
@@ -107,10 +107,10 @@ module RRRSpec
               p_trial.task_id = p_task
               p_trial.slave_id = p_slaves[slave_key]
               if 65000 < p_trial.stderr.size
-                p_trial.stderr = p_trial.stderr[0,65000] + '...(too long, shortened)'
+                p_trial.stderr = "#{p_trial.stderr.mb_chars.limit(65000)}...(too long, truncated)"
               end
               if 65000 < p_trial.stdout.size
-                p_trial.stdout = p_trial.stdout[0,65000] + '...(too long, shortened)'
+                p_trial.stdout = "#{p_trial.stdout.mb_chars.limit(65000)}...(too long, truncated)"
               end
 
               p_trials << p_trial
@@ -127,8 +127,8 @@ module RRRSpec
             h.delete('taskset')
             p_worker_log = Persistence::WorkerLog.new(h)
             p_worker_log.taskset_id = p_taskset
-            if 65535 < p_worker_log.log.size
-              p_worker_log.log = p_worker_log.log[0,65500] + '...(too long, shortened)'
+            if 65000 < p_worker_log.log.size
+              p_worker_log.log = "#{p_worker_log.log.mb_chars.limit(65000)}...(too long, truncated)"
             end
             p_worker_log
           end)
