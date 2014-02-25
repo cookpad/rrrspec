@@ -74,6 +74,7 @@ module RRRSpec
             if 65000 < p_slave.log.size
               p_slave.log = "#{p_slave.log.mb_chars.limit(65000)}...(too long, truncated)"
             end
+            save_log_file(slave.key, 'slave_log', slave.log)
             p_slave
           end
           Persistence::Slave.import(p_slaves)
@@ -109,9 +110,11 @@ module RRRSpec
               if 65000 < p_trial.stderr.size
                 p_trial.stderr = "#{p_trial.stderr.mb_chars.limit(65000)}...(too long, truncated)"
               end
+              save_log_file(trial.key, 'stdout', trial.stdout)
               if 65000 < p_trial.stdout.size
                 p_trial.stdout = "#{p_trial.stdout.mb_chars.limit(65000)}...(too long, truncated)"
               end
+              save_log_file(trial.key, 'stderr', trial.stderr)
 
               p_trials << p_trial
             end
@@ -130,9 +133,18 @@ module RRRSpec
             if 65000 < p_worker_log.log.size
               p_worker_log.log = "#{p_worker_log.log.mb_chars.limit(65000)}...(too long, truncated)"
             end
+            save_log_file(worker_log.key, 'worker_log', worker_log.log)
             p_worker_log
           end)
         end
+      end
+
+      def save_log_file(key, suffix, content)
+        path = File.join(
+          RRRSpec.configuration.execute_log_text_path,
+          "#{key.gsub(/[\/:]/, '_')}_#{suffix}.log",
+        )
+        File.open(path, 'w') { |fp| fp.write(content) }
       end
 
       def create_api_cache(taskset, path)
