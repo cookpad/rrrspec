@@ -4,13 +4,18 @@ module RRRSpec
   module Server
     describe Persister do
       before do
-        RRRSpec.configuration = Configuration.new
+        RRRSpec.configuration = ServerConfiguration.new
         RRRSpec.configuration.redis = @redis
+        RRRSpec.configuration.execute_log_text_path = Dir.mktmpdir
       end
 
       before do
         @worker, @taskset, @task, @worker_log, @slave, @trial =
           RRRSpec.finished_fullset
+      end
+
+      after do
+        FileUtils.remove_entry_secure(RRRSpec.configuration.execute_log_text_path)
       end
 
       describe '.persist' do
@@ -33,6 +38,15 @@ module RRRSpec
             trials: [{key: @trial.key}],
           }
         end
+
+        def log_path_of(filename)
+          File.join(RRRSpec.configuration.execute_log_text_path, filename)
+        end
+
+        let(:worker_log_name)   { @worker_log.key.gsub(/[\/:]/, '_') + "_worker_log.log" }
+        let(:slave_log_name)    { @slave.key.gsub(/[\/:]/, '_') + "_slave_log.log" }
+        let(:trial_stdout_name) { @trial.key.gsub(/[\/:]/, '_') + "_stdout.log" }
+        let(:trial_stderr_name) { @trial.key.gsub(/[\/:]/, '_') + "_stderr.log" }
 
         def eq_json(actual, expected)
           expect(
@@ -69,11 +83,33 @@ module RRRSpec
           check_persistence
         end
 
-        it 'truncates long logs' do
-          RRRSpec.redis.hset(@trial.key, 'stdout', 'out' * 30000)
+        context 'when logs are too long' do
+          before do
+            RRRSpec.redis.hset(@trial.key, 'stdout', 'out' * 30000)
+          end
+
+          it 'truncates long logs' do
+            Persister.persist(@taskset)
+            expect(Persistence::Taskset.first.tasks.first.trials.first.stdout).to end_with('...(too long, truncated)')
+          end
+
+          it 'saves full logs to the files' do
+            Persister.persist(@taskset)
+            expect(File.read(log_path_of(trial_stdout_name))).to eq(@trial.stdout)
+          end
+        end
+
+
+        it 'creates log text files' do
           Persister.persist(@taskset)
 
-          expect(Persistence::Taskset.first.tasks.first.trials.first.stdout).to end_with('...(too long, truncated)')
+          expect(Dir.foreach(RRRSpec.configuration.execute_log_text_path).to_a).to match_array([
+            '.', '..', worker_log_name, slave_log_name, trial_stdout_name, trial_stderr_name,
+          ])
+          expect(File.read(log_path_of(worker_log_name))).to eq(@worker_log.log)
+          expect(File.read(log_path_of(slave_log_name))).to eq(@slave.log)
+          expect(File.read(log_path_of(trial_stdout_name))).to eq(@trial.stdout)
+          expect(File.read(log_path_of(trial_stderr_name))).to eq(@trial.stderr)
         end
 
         context "trial is finished after the taskset's finish" do

@@ -5,6 +5,7 @@ module RRRSpec
     class ServerConfiguration < Configuration
       attr_accessor :rsync_server, :rsync_dir, :rsync_options
       attr_accessor :persistence_db
+      attr_accessor :execute_log_text_path
       attr_accessor :json_cache_path
 
       def initialize
@@ -17,6 +18,11 @@ module RRRSpec
 
         unless rsync_server and rsync_options and rsync_dir
           $stderr.puts('The rsync options are not set')
+          validity = false
+        end
+
+        unless execute_log_text_path
+          $stderr.puts('The path to save the log text should be set')
           validity = false
         end
 
