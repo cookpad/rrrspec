@@ -5,8 +5,9 @@ module RRRSpec
     module Persistence
       describe Taskset do
         before do
-          RRRSpec.configuration = RRRSpec::Configuration.new
+          RRRSpec.configuration = ServerConfiguration.new
           RRRSpec.configuration.redis = @redis
+          RRRSpec.configuration.execute_log_text_path = Dir.mktmpdir
         end
 
         before do

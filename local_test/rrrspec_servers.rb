@@ -16,6 +16,7 @@ RRRSpec.configure(:server) do |conf|
     adapter: 'sqlite3',
     database: File.expand_path("../tmp/local_test.db", __FILE__)
   }
+  conf.execute_log_text_path = File.expand_path("../tmp/log_files", __FILE__)
 end
 
 RRRSpec.configure(:worker) do |conf|

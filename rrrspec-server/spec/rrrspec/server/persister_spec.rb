@@ -43,6 +43,7 @@ module RRRSpec
           File.join(RRRSpec.configuration.execute_log_text_path, filename)
         end
 
+        let(:taskset_log_name)  { @taskset.key.gsub(/[\/:]/, '_') + "_log.log" }
         let(:worker_log_name)   { @worker_log.key.gsub(/[\/:]/, '_') + "_worker_log.log" }
         let(:slave_log_name)    { @slave.key.gsub(/[\/:]/, '_') + "_slave_log.log" }
         let(:trial_stdout_name) { @trial.key.gsub(/[\/:]/, '_') + "_stdout.log" }
@@ -88,11 +89,6 @@ module RRRSpec
             RRRSpec.redis.hset(@trial.key, 'stdout', 'out' * 30000)
           end
 
-          it 'truncates long logs' do
-            Persister.persist(@taskset)
-            expect(Persistence::Taskset.first.tasks.first.trials.first.stdout).to end_with('...(too long, truncated)')
-          end
-
           it 'saves full logs to the files' do
             Persister.persist(@taskset)
             expect(File.read(log_path_of(trial_stdout_name))).to eq(@trial.stdout)
@@ -104,8 +100,9 @@ module RRRSpec
           Persister.persist(@taskset)
 
           expect(Dir.foreach(RRRSpec.configuration.execute_log_text_path).to_a).to match_array([
-            '.', '..', worker_log_name, slave_log_name, trial_stdout_name, trial_stderr_name,
+            '.', '..', taskset_log_name, worker_log_name, slave_log_name, trial_stdout_name, trial_stderr_name,
           ])
+          expect(File.read(log_path_of(taskset_log_name))).to eq(@taskset.log)
           expect(File.read(log_path_of(worker_log_name))).to eq(@worker_log.log)
           expect(File.read(log_path_of(slave_log_name))).to eq(@slave.log)
           expect(File.read(log_path_of(trial_stdout_name))).to eq(@trial.stdout)
