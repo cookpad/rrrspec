@@ -50,19 +50,7 @@ module RRRSpec
           h.delete('tasks')
           h.delete('slaves')
           h.delete('worker_logs')
-          begin
-            Persistence::Taskset.create(h)
-          rescue ActiveRecord::StatementInvalid, Mysql2::Error => e
-            if e.message && e.message.match(/Data too long for column '(.+?)'/)
-              column = $1
-              RRRSpec.logger.error "column too long!!!"
-              RRRSpec.logger.error h.delete(column.to_sym) || ''
-              RRRSpec.logger.error h.delete(column) || ''
-              retry
-            else
-              raise e
-            end
-          end
+          Persistence::Taskset.create(h)
         end
 
         ActiveRecord::Base.transaction do
@@ -71,24 +59,23 @@ module RRRSpec
             h.delete('trials')
             p_slave = Persistence::Slave.new(h)
             p_slave.taskset_id = p_taskset.id
-            if 65000 < p_slave.log.size
-              p_slave.log = "#{p_slave.log.mb_chars.limit(65000)}...(too long, truncated)"
-            end
-            save_log_file(slave.key, 'slave_log', slave.log)
             p_slave
           end
           Persistence::Slave.import(p_slaves)
+          p_slaves.each { |p_slave| p_slave.run_callbacks(:save) {} }
         end
 
         ActiveRecord::Base.transaction do
-          Persistence::Task.import(taskset.tasks.map do |task|
+          p_tasks = taskset.tasks.map do |task|
             h = task.to_h
             h.delete('taskset')
             h.delete('trials')
             p_task = Persistence::Task.new(h)
             p_task.taskset_id = p_taskset
             p_task
-          end)
+          end
+          Persistence::Task.import(p_tasks)
+          p_tasks.each { |p_task| p_task.run_callbacks(:save) {} }
         end
 
         p_slaves = {}
@@ -107,44 +94,27 @@ module RRRSpec
               p_trial = Persistence::Trial.new(h)
               p_trial.task_id = p_task
               p_trial.slave_id = p_slaves[slave_key]
-              if 65000 < p_trial.stderr.size
-                p_trial.stderr = "#{p_trial.stderr.mb_chars.limit(65000)}...(too long, truncated)"
-              end
-              save_log_file(trial.key, 'stdout', trial.stdout)
-              if 65000 < p_trial.stdout.size
-                p_trial.stdout = "#{p_trial.stdout.mb_chars.limit(65000)}...(too long, truncated)"
-              end
-              save_log_file(trial.key, 'stderr', trial.stderr)
 
               p_trials << p_trial
             end
           end
           Persistence::Trial.import(p_trials)
+          p_trials.each { |p_trial| p_trial.run_callbacks(:save) {} }
         end
 
         ActiveRecord::Base.transaction do
-          Persistence::WorkerLog.import(taskset.worker_logs.map do |worker_log|
+          p_worker_logs = taskset.worker_logs.map do |worker_log|
             h = worker_log.to_h
             h['worker_key'] = h['worker']['key']
             h.delete('worker')
             h.delete('taskset')
             p_worker_log = Persistence::WorkerLog.new(h)
             p_worker_log.taskset_id = p_taskset
-            if 65000 < p_worker_log.log.size
-              p_worker_log.log = "#{p_worker_log.log.mb_chars.limit(65000)}...(too long, truncated)"
-            end
-            save_log_file(worker_log.key, 'worker_log', worker_log.log)
             p_worker_log
-          end)
+          end
+          Persistence::WorkerLog.import(p_worker_logs)
+          p_worker_logs.each { |p_worker_log| p_worker_log.run_callbacks(:save) {} }
         end
-      end
-
-      def save_log_file(key, suffix, content)
-        path = File.join(
-          RRRSpec.configuration.execute_log_text_path,
-          "#{key.gsub(/[\/:]/, '_')}_#{suffix}.log",
-        )
-        File.open(path, 'w') { |fp| fp.write(content) }
       end
 
       def create_api_cache(taskset, path)

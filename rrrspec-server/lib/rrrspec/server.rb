@@ -1,9 +1,12 @@
+require 'fileutils'
 require 'active_record'
 
 require 'rrrspec'
 require 'rrrspec/server/arbiter'
 require 'rrrspec/server/configuration'
 require 'rrrspec/server/dispatcher'
+require 'rrrspec/server/json_constructor'
+require 'rrrspec/server/log_file_persister'
 require 'rrrspec/server/persistent_models'
 require 'rrrspec/server/persister'
 require 'rrrspec/server/worker_runner'
