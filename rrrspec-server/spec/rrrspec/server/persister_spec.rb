@@ -69,6 +69,13 @@ module RRRSpec
           check_persistence
         end
 
+        it 'truncates long logs' do
+          RRRSpec.redis.hset(@trial.key, 'stdout', 'out' * 30000)
+          Persister.persist(@taskset)
+
+          expect(Persistence::Taskset.first.tasks.first.trials.first.stdout).to end_with('...(too long, truncated)')
+        end
+
         context "trial is finished after the taskset's finish" do
           before do
             @late_trial = Trial.create(@task, @slave)
