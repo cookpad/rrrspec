@@ -50,7 +50,19 @@ module RRRSpec
           h.delete('tasks')
           h.delete('slaves')
           h.delete('worker_logs')
-          Persistence::Taskset.create(h)
+          begin
+            Persistence::Taskset.create(h)
+          rescue ActiveRecord::StatementInvalid, Mysql2::Error => e
+            if e.message && e.message.match(/Data too long for column '(.+?)'/)
+              column = $1
+              RRRSpec.logger.error "column too long!!!"
+              RRRSpec.logger.error h.delete(column.to_sym) || ''
+              RRRSpec.logger.error h.delete(column) || ''
+              retry
+            else
+              raise e
+            end
+          end
         end
 
         ActiveRecord::Base.transaction do
@@ -59,6 +71,9 @@ module RRRSpec
             h.delete('trials')
             p_slave = Persistence::Slave.new(h)
             p_slave.taskset_id = p_taskset.id
+            if 65000 < p_slave.log.size
+              p_slave.log = p_slave.log[0,65000] + '...(too long, shortened)'
+            end
             p_slave
           end
           Persistence::Slave.import(p_slaves)
@@ -91,6 +106,13 @@ module RRRSpec
               p_trial = Persistence::Trial.new(h)
               p_trial.task_id = p_task
               p_trial.slave_id = p_slaves[slave_key]
+              if 65000 < p_trial.stderr.size
+                p_trial.stderr = p_trial.stderr[0,65000] + '...(too long, shortened)'
+              end
+              if 65000 < p_trial.stdout.size
+                p_trial.stdout = p_trial.stdout[0,65000] + '...(too long, shortened)'
+              end
+
               p_trials << p_trial
             end
           end
@@ -105,6 +127,9 @@ module RRRSpec
             h.delete('taskset')
             p_worker_log = Persistence::WorkerLog.new(h)
             p_worker_log.taskset_id = p_taskset
+            if 65535 < p_worker_log.log.size
+              p_worker_log.log = p_worker_log.log[0,65500] + '...(too long, shortened)'
+            end
             p_worker_log
           end)
         end
