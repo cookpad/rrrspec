@@ -11,13 +11,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20131105050718) do
+ActiveRecord::Schema.define(version: 20140221062741) do
 
   create_table "slaves", force: true do |t|
     t.string  "key"
     t.integer "taskset_id"
     t.string  "status"
-    t.text    "log"
+    t.text    "log",        limit: 4294967296
   end
 
   add_index "slaves", ["key"], name: "index_slaves_on_key"
@@ -38,8 +38,8 @@ ActiveRecord::Schema.define(version: 20131105050718) do
   create_table "tasksets", force: true do |t|
     t.string   "key"
     t.string   "rsync_name"
-    t.text     "setup_command"
-    t.text     "slave_command"
+    t.text     "setup_command",            limit: 4294967296
+    t.text     "slave_command",            limit: 4294967296
     t.string   "worker_type"
     t.integer  "max_workers"
     t.integer  "max_trials"
@@ -49,7 +49,7 @@ ActiveRecord::Schema.define(version: 20131105050718) do
     t.datetime "created_at"
     t.string   "status"
     t.datetime "finished_at"
-    t.text     "log"
+    t.text     "log",                      limit: 4294967296
   end
 
   add_index "tasksets", ["created_at"], name: "index_tasksets_on_created_at"
@@ -65,8 +65,8 @@ ActiveRecord::Schema.define(version: 20131105050718) do
     t.datetime "started_at"
     t.datetime "finished_at"
     t.string   "status"
-    t.text     "stdout"
-    t.text     "stderr"
+    t.text     "stdout",      limit: 4294967296
+    t.text     "stderr",      limit: 4294967296
     t.integer  "passed"
     t.integer  "pending"
     t.integer  "failed"
@@ -84,7 +84,7 @@ ActiveRecord::Schema.define(version: 20131105050718) do
     t.datetime "rsync_finished_at"
     t.datetime "setup_finished_at"
     t.datetime "finished_at"
-    t.text     "log"
+    t.text     "log",               limit: 4294967296
   end
 
   add_index "worker_logs", ["key"], name: "index_worker_logs_on_key"
