@@ -1,249 +1,86 @@
- 1. Server started
+TasksetRef : Reference
+TaskRef : Reference
+TrialRef : Reference
+TrialStatus : ['error', 'timeout', 'failed', 'pending', 'passed']
+StdOut : String
+StdErr : String
+PassedCount : Maybe Int
+PendingCount : Maybe Int
+FailedCount : Maybe Int
+SpecPath : String
+HardTimeoutSec : Int
+SoftTimeoutSec : Int
+RSyncInfo : (RSyncServer, RSyncOption,  RSyncDir, RSyncName)
+RSyncServer : String
+RSyncOption : String
+RSyncDir : String
+RSyncName : String
+WorkerRef : Reference
+WorkerLogRef : Reference
+SetupCommand : String
+SlaveCommand : String
+SlaveName : String
+SlaveRef : Reference
+MaxTrials : Int
+TasksetStatus : ['waiting', 'running', 'succeeded', 'cancelled', 'finished']
+Task : (SpecPath, SpecSHA1, HardTimeoutSec, SoftTimeoutSec)
+SpecSHA1 : String
+AverageSec : Int
 
- 2. Worker spawned
+# Master
 
-   worker = Worker.create(...)
-   worker.heartbeat(...)
+## SpecAverageSec
 
- 3. Client creates a taskset
+query_spec_average_sec : SpecSHA1 -> AverageSec
 
-   taskset = Taskset.create(...)
+## Taskset
 
- 4. Client adds tasks to the taskset and enqueues them to the task_queue.
+create_taskset : (RSyncName, SetupCommand, SlaveCommand, WorkerType, TasksetClass, MaxWorkers, MaxTrials, [Task]) -> TasksetRef
+dequeue_task : TasksetRef -> (TaskRef, SpecPath, HardTimeoutSec, SoftTimeoutSec)
+try_finish_taskset : TasksetRef -> ()
+fail_taskset : TasksetRef -> ()
+query_taskset_status : TasksetRef -> TasksetStatus
+listen_to_taskset : TasksetRef -> ()
 
-   task = Task.create(taskset, ...)
-   taskset.add_task(task)
-   taskset.enqueue_task(task)
+## Task
 
- 5. Client adds the taskset to the ActiveTaskset.
+reversed_enqueue_task : TaskRef -> ()
 
-   ActiveTaskset.add(taskset)
+## Trial
 
- 6. Client notifies the dispatcher.
+create_trial : TaskRef -> TrialRef
+finish_trial : TrialRef -> TrialStatus -> StdOut -> StdErr -> PassedCount -> PendingCount -> FailedCount -> ()
 
-   DispatcherQueue.notify
+## Worker
 
- 7. Dispatcher dispatches the taskset to the worker.
+current_taskset : WorkerRef -> Maybe TasksetRef -> ()
 
-   DispatcherQueue.wait
-   worker.enqueue_taskset(taskset)
+## WorkerLog
 
- 8. Worker start working on the taskset.
+create_worker_log : WorkerName -> WorkerLogRef
+append_worker_log_log : WorkerLogRef -> String -> ()
+finish_worker_log : WorkerLogRef -> ()
 
-   taskset = worker.dequeue_taskset
-   worker_log = WorkerLog.create(worker, taskset)
-   worker_log.set_rsync_finished_time
-   worker_log.set_setup_finished_time
+## Slave
 
- 9. (Worker happends to request the Arbiter to fail the taskset.)
+create_slave : SlaveName -> SlaveRef
+append_slave_log : SlaveRef -> String -> ()
+current_trial : SlaveRef -> Maybe TrialRef -> ()
+finish_slave : SlaveRef -> ()
 
-   ArbiterQueue.fail(taskset)
+# Worker
 
-   Goto 15
+assign_taskset : TasksetRef -> RSyncInfo -> SetupCommand -> SlaveCommand -> MaxTrials -> ()
+query_taskset : () -> TasksetRef
 
-10. Worker creates slaves.
+------------
 
-   slave = Slave.create
-   taskset.add_slave(slave)
+# TasksetNotification
 
-11. Slave makes trials.
-
-   task = taskset.dequeue_task
-   trial = Trial.create(task, slave)
-   trial.start
-   trial.finish(...)
-   ArbiterQueue.trial(trial)
-
-12. Arbiter updates the status of the task.
-
-   task.update_status(...)
-   taskset.incr_success_count
-   taskset.finish_task(task)
-
-13. Slave makes a check request to the Arbiter.
-
-   ArbiterQueue.check(taskset)
-
-14. (Arbiter happends to re-queue the task.)
-
-   taskset.enqueue_task(task)
-
-15. Arbiter finishes the taskset.
-
-   taskset.update_status(...)
-   taskset.set_finished_time
-   taskset.clear_queue
-   ActiveTaskset.remove(taskset)
-   PersisterQueue.enqueue(taskset)
-
-16. Worker finishes the slaves and marks worker_log as finished.
-
-   worker_log.set_finished_time
-
-17. Persister persists the taskset data.
-
-================================================================================
-
-rrrspec:rsync_info
-  hash[
-    rsync_remote_path: 'rsyncuser@server.local:/home/rsyncuser/rrrspec'
-    rsync_options: '--delete ...'
-  ]
-
-rrrspec:arbiter_queue
-  list[
-    'cancel'
-    'check\trrrspec:taskset:$TASKSET_ID'
-    'fail\trrrspec:taskset:$TASKSET_ID'
-    'trial\trrrspec:taskset:$TASKSET_ID:task:$TASK_ID:trial:$TRIAL_ID'
-  ]
-
-rrrspec:dispatcher_queue
-  list[
-    '0'
-  ]
-
-rrrspec:persister_queue
-  list[
-    'rrrspec:taskset:$TASKSET_ID'
-  ]
-
-rrrspec:active_taskset
-  list[
-    'rrrspec:taskset:$TASKSET_ID'
-  ]
-
-================================================================================
-
-rrrspec:taskset:$TASKSET_ID
-  hash[
-    rsync_name: $USER
-    setup_command: 'bundle'
-    slave_command: 'bundle exec rrrspec slave'
-    worker_type: ['default', ...]
-    max_workers: [1, 2, 3, ...]
-    max_trials: [1, 2, ...]
-    taskset_class: 'default'
-    unknown_spec_timeout_sec: 5 * 60
-    least_timeout_sec: 30
-    created_at: '2013-07-11 15:43:36 +0900'
-
-    status: [nil, 'running', 'succeeded', 'cancelled', 'failed']
-    finished_at: [nil, '2013-07-11 15:43:36 +0900']
-    succeeded_count: [0, 1, 2, ...]
-    failed_count: [0, 1, 2, ...]
-  ]
-
-rrrspec:taskset:$TASKSET_ID:log
-  string
-
-rrrspec:taskset:$TASKSET_ID:slave
-  list[
-    rrrspec:worker:$WORKER_ID:slave:$PID
-  ]
-
-rrrspec:taskset:$TASKSET_ID:worker_log
-  list[
-    rrrspec:taskset:$TASKSET_ID:worker_log:rrrspec:worker:$WORKER_ID
-  ]
-
-rrrspec:taskset:$TASKSET_ID:worker_log:rrrspec:worker:$WORKER_ID
-  hash[
-    worker: rrrspec:worker:$WORKER_ID
-    taskset: rrrspec:taskset:$TASKSET_ID
-    started_at: '2013-07-11 15:43:36 +0900'
-    rsync_finished_at: [nil, '2013-07-11 15:43:36 +0900']
-    setup_finished_at: [nil, '2013-07-11 15:43:36 +0900']
-    finished_at: [nil, '2013-07-11 15:43:36 +0900']
-  ]
-
-rrrspec:taskset:$TASKSET_ID:worker_log:rrrspec:worker:$WORKER_ID:log
-  string
-
-rrrspec:taskset:$TASKSET_ID:task_queue
-  list[
-    'rrrspec:task:$TASKSET_ID:task:$TASK_ID'
-  ]
-
-rrrspec:taskset:$TASKSET_ID:tasks
-  list[
-    'rrrspec:task:$TASKSET_ID:task:$TASK_ID'
-  ]
-
-rrrspec:taskset:$TASKSET_ID:tasks_left
-  list[
-    'rrrspec:task:$TASKSET_ID:task:$TASK_ID'
-  ]
-
-rrrspec:taskset:$TASKSET_ID:task:$TASK_ID
-  hash[
-    taskset: 'rrrspec:taskset:$TASKSET_ID'
-    status: [nil, 'passed', 'pending', 'failed']
-    estimate_sec: [nil, 0, 1, 2, ...]
-    spec_file: 'spec/rrrspec/my_class_spec.rb'
-  ]
-
-rrrspec:taskset:$TASKSET_ID:task:$TASK_ID:trial
-  list[
-    rrrspec:taskset:$TASKSET_ID:task:$TASK_ID:trial:$TRIAL_ID
-  ]
-
-rrrspec:taskset:$TASKSET_ID:task:$TASK_ID:trial:$TRIAL_ID
-  hash[
-    task: 'rrrspec:taskset:$TASKSET_ID:task:$TASK_ID'
-    slave: 'rrrspec:worker:$WORKER_ID:slave:$PID'
-    started_at: [nil, '2013-07-11 15:43:36 +0900']
-    finished_at: [nil, '2013-07-11 15:43:36 +0900']
-    status: [nil, 'passed', 'pending', 'failed', 'error', 'timeout']
-    stdout: [nil, '...']
-    stderr: [nil, '...']
-    passed: [nil, 0, 1, 2, ...]
-    pending: [nil, 0, 1, 2, ...]
-    failed: [nil, 0, 1, 2, ...]
-  ]
-
-================================================================================
-
-rrrspec:worker
-  set[
-    'rrrspec:worker:$WORKER_ID'
-  ]
-
-rrrspec:worker:$WORKER_ID
-  hash[
-    worker_type: 'default'
-    taskset: 'rrrspec:taskset:$TASKSET_ID'
-  ]
-
-rrrspec:worker:$WORKER_ID:worker_queue
-  list[
-    'rrrspec:taskset:$TASKSET_ID'
-  ]
-
-rrrspec:worker:$WORKER_ID:heartbeat
-  string 'alive'
-  expire $HEARTBEAT_TIME
-
-rrrspec:worker:$WORKER_ID:slave:$PID
-  hash [
-    status: [nil, 'normal_exit', 'timeout_exit', 'failure_exit']
-  ]
-
-rrrspec:worker:$WORKER_ID:slave:$PID:trial
-  list [
-    'rrrspec:taskset:$TASKSET_ID:task:$TASK_ID:trial:$TRIAL_ID'
-  ]
-
-rrrspec:worker:$WORKER_ID:slave:$PID:log
-  string
-
-rrrspec:worker:$WORKER_ID:slave:$PID:heartbeat
-  string 'alive'
-  expire $HEARTBEAT_TIME
-
-================================================================================
-
-rrrspec:estimate_sec:$TASKSET_CLASS
-  hash[
-    $TASK_ID: [1, 2, ...]
-  ]
+taskset_updated : Timestamp -> TasksetRef -> Hash -> ()
+task_updated : Timestamp -> TaskRef -> Hash -> ()
+trial_created : Timestamp -> TrialRef -> TaskRef -> SlaveRef ->
+trial_updated : Timestamp -> 
+worker_log_created : Timestamp -> WorkerLog -> WorkerName -> ()
+slave_created : Timestamp -> SlaveRef -> SlaveName -> ()
+slave_updated : Timestamp -> SlaveRef -> Hash -> ()
