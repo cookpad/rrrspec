@@ -1,5 +1,67 @@
 module RRRSpec
   module Server
+    module SerializableCarrier
+      extend ActiveSupport::Concern
+
+      class ClassMethods
+        def fields(*params)
+          define_method(:initialize) do |opt|
+            params.each do |param|
+              if opt.key?(param)
+                set_instance_variable("@#{param}", opt.delete(param))
+              else
+                raise ArgumentError
+              end
+            end
+            unless opt.empty?
+              raise ArgumentError
+            end
+          end
+
+          define_method(:to_msgpack) do
+            Hash[
+              params.map do |param|
+                [param, instance_variable_get("@#{param}")]
+              end
+            ].to_msgpack
+          end
+        end
+      end
+    end
+
+    class RSyncInfo
+      include SerializableCarrier
+      fields :server, :options, :base_dir, :name
+      attr_reader :name
+
+      def transfer_command(transfer_to)
+        "rsync #{@options} #{@server}:#{File.join(@base_dir, @name)}/ #{File.join(transfer_to, @name)}"
+      end
+    end
+
+    module RSyncExecutor
+      def self.rsync(logger, taskset, rsync_info)
+        logger.write("Start RSync")
+
+        working_path = RRRSpec.configuration.working_dir
+        FileUtils.mkdir_p(working_path) unless Dir.exists?(working_path)
+        remote_path = File.join(RRRSpec.configuration.rsync_remote_path, taskset.rsync_name)
+        command = "rsync #{RRRSpec.configuration.rsync_options} #{remote_path}/ #{working_path}"
+
+        pid, out_rd, err_rd = execute_with_logs(working_path, command, {})
+        log_to_logger(logger, out_rd, err_rd)
+        pid, status = Process.waitpid2(pid)
+        if status.success?
+          logger.write("RSync finished")
+          return true
+        else
+          logger.write("RSync failed")
+          ArbiterQueue.fail(taskset)
+          return false
+        end
+      end
+    end
+
     class WorkerRunner
       CANCEL_POLLING = 10
       TIMEOUT_EXITCODE = 42
@@ -19,26 +81,6 @@ module RRRSpec
 
       private
 
-      def rsync(logger, taskset)
-        logger.write("Start RSync")
-
-        working_path = File.join(RRRSpec.configuration.working_dir, taskset.rsync_name)
-        FileUtils.mkdir_p(working_path) unless Dir.exists?(working_path)
-        remote_path = File.join(RRRSpec.configuration.rsync_remote_path, taskset.rsync_name)
-        command = "rsync #{RRRSpec.configuration.rsync_options} #{remote_path}/ #{working_path}"
-
-        pid, out_rd, err_rd = execute_with_logs(working_path, command, {})
-        log_to_logger(logger, out_rd, err_rd)
-        pid, status = Process.waitpid2(pid)
-        if status.success?
-          logger.write("RSync finished")
-          return true
-        else
-          logger.write("RSync failed")
-          ArbiterQueue.fail(taskset)
-          return false
-        end
-      end
 
       def setup(logger, taskset)
         logger.write("Start setup")

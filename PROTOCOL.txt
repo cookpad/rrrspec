@@ -48,8 +48,8 @@ reversed_enqueue_task : TaskRef -> ()
 
 ## Trial
 
-create_trial : TaskRef -> TrialRef
-finish_trial : TrialRef -> TrialStatus -> StdOut -> StdErr -> PassedCount -> PendingCount -> FailedCount -> ()
+create_trial : TaskRef -> SlaveRef -> StartedAt -> TrialRef
+finish_trial : TrialRef -> FinishedAt -> TrialStatus -> StdOut -> StdErr -> PassedCount -> PendingCount -> FailedCount -> ()
 
 ## Worker
 
@@ -59,6 +59,9 @@ current_taskset : WorkerRef -> Maybe TasksetRef -> ()
 
 create_worker_log : WorkerName -> WorkerLogRef
 append_worker_log_log : WorkerLogRef -> String -> ()
+set_rsync_finished_time : WorkerLogRef -> Datetime -> ()
+set_setup_finished_time : WorkerLogRef -> Datetime -> ()
+set_worker_finished_time : WorkerLogRef -> Datetime -> ()
 finish_worker_log : WorkerLogRef -> ()
 
 ## Slave
@@ -79,8 +82,9 @@ query_taskset : () -> TasksetRef
 
 taskset_updated : Timestamp -> TasksetRef -> Hash -> ()
 task_updated : Timestamp -> TaskRef -> Hash -> ()
-trial_created : Timestamp -> TrialRef -> TaskRef -> SlaveRef ->
-trial_updated : Timestamp -> 
-worker_log_created : Timestamp -> WorkerLog -> WorkerName -> ()
+trial_created : Timestamp -> TrialRef -> TaskRef -> SlaveRef -> StartedAt -> ()
+trial_updated : Timestamp -> TrialRef -> TaskRef -> FinishedAt -> TrialStatus -> PassedCount -> PendingCount -> FailedCount -> ()
+worker_log_created : Timestamp -> WorkerLogRef -> WorkerName -> ()
+worker_log_updated : Timestamp -> WorkerLogRef -> Hash -> ()
 slave_created : Timestamp -> SlaveRef -> SlaveName -> ()
 slave_updated : Timestamp -> SlaveRef -> Hash -> ()

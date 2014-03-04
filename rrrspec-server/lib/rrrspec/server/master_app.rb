@@ -31,10 +31,10 @@ module RRRSpec
     end
 
     module TrialQuery
-      def create_trial(ws, task_ref)
+      def create_trial(ws, task_ref, slave_ref, started_at)
       end
 
-      def finish_trial(ws, trial_ref, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+      def finish_trial(ws, trial_ref, finished_at, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
       end
     end
 
@@ -47,10 +47,19 @@ module RRRSpec
       def create_worker_log(ws, worker_name)
       end
 
-      def append_worker_log_log(ws, worker_ref, log)
+      def append_worker_log_log(ws, worker_log_ref, log)
       end
 
-      def finish_worker_log(ws, worker_ref)
+      def set_rsync_finished_time(ws, worker_log_ref, finished_at)
+      end
+
+      def set_setup_finished_time(ws, worker_log_ref, finished_at)
+      end
+
+      def set_worker_finished_time(ws, worker_log_ref, finished_at)
+      end
+
+      def finish_worker_log(ws, worker_log_ref)
       end
     end
 
