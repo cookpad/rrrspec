@@ -19,8 +19,16 @@ trap "before_exit" EXIT
 RRRSPEC_SERVERS_OPTIONS="--config=rrrspec_servers.rb"
 RRRSPEC_CLIENTS_OPTIONS="--config=rrrspec_clients.rb"
 
+mkdir -p vendor/cache
+cd ../rrrspec-client && bundle exec rake build && cp pkg/rrrspec-client-0.2.0.gem ../local_test/vendor/cache
+cd ../rrrspec-server && bundle exec rake build && cp pkg/rrrspec-server-0.2.0.gem ../local_test/vendor/cache
+cd ../local_test
+
+rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-client-0.2.0.gemspec
+rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-server-0.2.0.gemspec
+
 set -x
-bundle install
+bundle install --path vendor/bundler
 bundle exec rake -t rrrspec:server:db:create rrrspec:server:db:migrate RRRSPEC_CONFIG_FILES=rrrspec_servers.rb
 redis-server --port 9998 --save '' >/dev/null 2>&1 &
 

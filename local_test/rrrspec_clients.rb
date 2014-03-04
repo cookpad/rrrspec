@@ -8,19 +8,22 @@ RRRSpec.configure(:client) do |conf|
     '--perms',
     '--inplace',
     '--delete',
-    '--exclude=local_test/tmp',
-    '--exclude=.git',
+    '--exclude=tmp',
   ].flatten.join(' ')
-  conf.packaging_dir = `git rev-parse --show-toplevel`.strip
+  conf.packaging_dir = File.expand_path("..", __FILE__)
   conf.spec_files = lambda do
     [
-      'local_test/success_spec.rb',
-      'local_test/fail_spec.rb',
-      'local_test/timeout_spec.rb',
+      'success_spec.rb',
+      'fail_spec.rb',
+      'timeout_spec.rb',
     ]
   end
-  conf.setup_command = ''
-  conf.slave_command = "bundle exec rrrspec-client slave"
+  conf.setup_command = <<-END
+    bundle install
+  END
+  conf.slave_command = <<-END
+    bundle exec rrrspec-client slave
+  END
   conf.worker_type = 'default'
   conf.taskset_class = 'rrrspec'
   conf.max_workers = 3
