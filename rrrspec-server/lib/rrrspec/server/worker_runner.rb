@@ -150,7 +150,7 @@ module RRRSpec
         (pid_to_slave_number.keys + [cancel_watcher_pid]).each do |pid|
           begin
             Process.kill("-TERM", pid)
-          rescue Errno::ESRCH
+          rescue Errno::ESRCH, Errno::EPERM
           end
         end
 
@@ -171,7 +171,7 @@ module RRRSpec
         `ps aux | grep "rrrspec slave" | grep -v grep | awk '{print $2}'`.split("\n").map(&:to_i).each do |pid|
           begin
             Process.kill("KILL", pid)
-          rescue Errno::ESRCH
+          rescue Errno::ESRCH, Errno::EPERM
           end
         end
       end

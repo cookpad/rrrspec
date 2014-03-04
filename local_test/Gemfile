@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem "rake"
-gem "sqlite3"
-gem "rrrspec-client", path: "../rrrspec-client"
-gem "rrrspec-server", path: "../rrrspec-server"
+gem 'rake'
+gem 'sqlite3'
+gem 'rrrspec-client'
+gem 'rrrspec-server'
