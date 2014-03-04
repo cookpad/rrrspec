@@ -45,15 +45,15 @@ module RRRSpec
           @timeout = TASKQUEUE_ARBITER_TIMEOUT
           ArbiterQueue.check(@taskset)
         else
-          @timeout = TASKQUEUE_TASK_TIMEOUT
           if @worked_task_keys.include?(task.key)
             @taskset.reversed_enqueue_task(task)
             return
           else
             @worked_task_keys << task.key
           end
-
           return if task.status.present?
+
+          @timeout = TASKQUEUE_TASK_TIMEOUT
           trial = Trial.create(task, @slave)
 
           @rspec_runner.reset
