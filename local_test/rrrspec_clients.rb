@@ -1,5 +1,6 @@
 RRRSpec.configure(:client) do |conf|
-  conf.packaging_rsync_options = [
+  conf.rsync_remote_path = "localhost:#{File.expand_path("../tmp/server-rsync", __FILE__)}"
+  conf.rsync_options = [
     '--compress',
     '--times',
     '--recursive',

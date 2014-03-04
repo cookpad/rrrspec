@@ -10,62 +10,6 @@ module RRRSpec
     end
   end
 
-  module RSyncInfo
-    WAIT_SERVER_SEC = 10
-    RSYNC_INFO_KEY = 'rrrspec:rsync_info'
-
-    module_function
-
-    def self.hget_loop(key)
-      loop do
-        v = RRRSpec.redis.hget(RSYNC_INFO_KEY, key)
-        return v if v.present?
-        sleep WAIT_SERVER_SEC
-      end
-    end
-
-    # Public
-    def self.rsync_server
-      hget_loop('rsync_server')
-    end
-
-    # Public
-    def self.rsync_dir
-      hget_loop('rsync_dir')
-    end
-
-    # Public
-    def self.rsync_options
-      hget_loop('rsync_options')
-    end
-
-    # ==========================================================================
-    # Heartbeat
-
-    # Public: Check its existence.
-    #
-    # Returns bool
-    def self.exist?
-      RRRSpec.redis.exists('rrrspec:rsync_info')
-    end
-
-    # Public: Maintain heartbeat
-    def self.heartbeat(time)
-      unless Dir.exist?(RRRSpec.configuration.rsync_dir)
-        FileUtils.makedirs(RRRSpec.configuration.rsync_dir)
-      end
-      RRRSpec.redis.multi do
-        RRRSpec.redis.hmset(
-          'rrrspec:rsync_info',
-          'rsync_server', RRRSpec.configuration.rsync_server,
-          'rsync_dir', RRRSpec.configuration.rsync_dir,
-          'rsync_options', RRRSpec.configuration.rsync_options
-        )
-        RRRSpec.redis.expire('rrrspec:rsync_info', time)
-      end
-    end
-  end
-
   module ArbiterQueue
     ARBITER_QUEUE_KEY = 'rrrspec:arbiter_queue'
 

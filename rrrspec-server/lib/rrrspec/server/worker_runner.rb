@@ -24,8 +24,8 @@ module RRRSpec
 
         working_path = File.join(RRRSpec.configuration.working_dir, taskset.rsync_name)
         FileUtils.mkdir_p(working_path) unless Dir.exists?(working_path)
-        remote_path = "#{RSyncInfo.rsync_server}:#{File.join(RSyncInfo.rsync_dir, taskset.rsync_name)}"
-        command = "rsync #{RSyncInfo.rsync_options} #{remote_path}/ #{working_path}"
+        remote_path = File.join(RRRSpec.configuration.rsync_remote_path, taskset.rsync_name)
+        command = "rsync #{RRRSpec.configuration.rsync_options} #{remote_path}/ #{working_path}"
 
         pid, out_rd, err_rd = execute_with_logs(working_path, command, {})
         log_to_logger(logger, out_rd, err_rd)

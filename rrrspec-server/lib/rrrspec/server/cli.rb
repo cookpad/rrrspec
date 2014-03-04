@@ -78,7 +78,6 @@ module RRRSpec
         auto_rebirth do
           ActiveRecord::Base.establish_connection(**RRRSpec.configuration.persistence_db)
           Thread.abort_on_exception = true
-          Thread.fork { RRRSpec.pacemaker(RSyncInfo, 60, 5) }
           Thread.fork { Dispatcher.work_loop }
           Thread.fork { Arbiter.work_loop }
           Thread.fork { Persister.work_loop }
