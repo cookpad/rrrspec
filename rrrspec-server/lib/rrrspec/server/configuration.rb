@@ -3,7 +3,6 @@ require 'facter'
 module RRRSpec
   module Server
     class ServerConfiguration < Configuration
-      attr_accessor :rsync_server, :rsync_dir, :rsync_options
       attr_accessor :persistence_db
       attr_accessor :execute_log_text_path
       attr_accessor :json_cache_path
@@ -15,11 +14,6 @@ module RRRSpec
 
       def check_validity
         validity = super
-
-        unless rsync_server and rsync_options and rsync_dir
-          $stderr.puts('The rsync options are not set')
-          validity = false
-        end
 
         unless execute_log_text_path
           $stderr.puts('The path to save the log text should be set')
@@ -36,6 +30,7 @@ module RRRSpec
     end
 
     class WorkerConfiguration < Configuration
+      attr_accessor :rsync_remote_path, :rsync_options
       attr_accessor :working_dir, :worker_type, :slave_processes
 
       def initialize
@@ -47,6 +42,11 @@ module RRRSpec
 
       def check_validity
         validity = super
+
+        unless rsync_remote_path and rsync_options
+          $stderr.puts('The rsync options are not set')
+          validity = false
+        end
 
         unless working_dir and worker_type
           $stderr.puts('The worker options are not set')

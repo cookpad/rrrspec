@@ -39,7 +39,8 @@ Create '.rrrspec'
       conf.redis = { host: 'redisserver.local', port: 6379 }
 
       conf.packaging_dir = `git rev-parse --show-toplevel`.strip
-      conf.packaging_rsync_options = %w(
+      conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
+      conf.rsync_options = %w(
         --compress
         --times
         --recursive
@@ -82,18 +83,6 @@ Create 'rrrspec-server-config.rb'
       ActiveRecord::Base.default_timezone = :local
       conf.redis = { host: 'redisserver.local', port: 6379 }
 
-      conf.rsync_server = 'rsyncserver.local'
-      conf.rsync_dir = '/mnt/rrrspec-rsync'
-      conf.rsync_options = %w(
-        --compress
-        --times
-        --recursive
-        --links
-        --perms
-        --inplace
-        --delete
-      ).join(' ')
-
       conf.persistence_db = {
         adapter: 'mysql2',
         encoding: 'utf8mb4',
@@ -110,6 +99,17 @@ Create 'rrrspec-server-config.rb'
     RRRSpec.configure(:worker) do |conf|
       conf.redis = { host: 'redisserver.local', port: 6379 }
     
+      conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
+      conf.rsync_options = %w(
+        --compress
+        --times
+        --recursive
+        --links
+        --perms
+        --inplace
+        --delete
+      ).join(' ')
+
       conf.working_dir = '/mnt/working'
       conf.worker_type = 'default'
     end

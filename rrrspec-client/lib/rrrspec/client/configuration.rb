@@ -2,7 +2,7 @@ module RRRSpec
   module Client
     class ClientConfiguration < Configuration
       attr_accessor :packaging_dir
-      attr_accessor :packaging_rsync_options
+      attr_accessor :rsync_remote_path, :rsync_options
       attr_writer :spec_files
       attr_accessor :setup_command, :slave_command
       attr_accessor :taskset_class, :worker_type

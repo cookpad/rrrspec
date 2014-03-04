@@ -67,8 +67,6 @@ module RRRSpec
       desc 'nodes', 'list up the active nodes'
       def nodes
         setup(Configuration.new)
-        puts "Server:"
-        puts "\t#{RSyncInfo.exist? ? "Yes" : "No"}"
         puts "Workers:"
         Worker.list.each { |worker| puts "\t#{worker.key}" }
       end

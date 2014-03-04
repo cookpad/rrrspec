@@ -112,9 +112,8 @@ module RRRSpec
 
       def run_rsync_package(rsync_name)
         conf = RRRSpec.configuration
-        remote_dir = File.join(RSyncInfo.rsync_dir, rsync_name)
-        remote_path = "#{RSyncInfo.rsync_server}:#{remote_dir}"
-        command = "rsync #{conf.packaging_rsync_options} #{conf.packaging_dir}/ #{remote_path}"
+        remote_path = File.join(conf.rsync_remote_path, rsync_name)
+        command = "rsync #{conf.rsync_options} #{conf.packaging_dir}/ #{remote_path}"
         $stderr.puts command
         system(command)
         $?.success?

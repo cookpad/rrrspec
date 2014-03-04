@@ -1,7 +1,5 @@
  1. Server started
 
-   RSyncInfo.heartbeat(...)
-
  2. Worker spawned
 
    worker = Worker.create(...)
@@ -88,8 +86,7 @@
 
 rrrspec:rsync_info
   hash[
-    rsync_server: 'rsyncuser@server.local'
-    rsync_dir: '/home/rsyncuser/rrrspec'
+    rsync_remote_path: 'rsyncuser@server.local:/home/rsyncuser/rrrspec'
     rsync_options: '--delete ...'
   ]
 
