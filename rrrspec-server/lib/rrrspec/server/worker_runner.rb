@@ -3,7 +3,7 @@ module RRRSpec
     module SerializableCarrier
       extend ActiveSupport::Concern
 
-      class ClassMethods
+      module ClassMethods
         def fields(*params)
           define_method(:initialize) do |opt|
             params.each do |param|

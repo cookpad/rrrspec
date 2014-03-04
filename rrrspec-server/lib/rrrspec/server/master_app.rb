@@ -1,5 +1,17 @@
 module RRRSpec
   module Server
+    module NotificatorQuery
+      def listen_to_global(ws)
+        @global_notificator.listen(ws)
+        nil
+      end
+
+      def listen_to_taskset(ws, taskset_ref)
+        @taskset_notificator.listen(ws, taskset)
+        nil
+      end
+    end
+
     module SpecAverageSecQuery
       def query_spec_average_sec(ws, spec_sha1)
       end
@@ -7,6 +19,17 @@ module RRRSpec
 
     module TasksetQuery
       def create_taskset(ws, rsync_name, setup_command, slave_command, worker_type, taskset_class, max_workers, max_trials, tasks)
+        taskset = Taskset.create(
+          rsync_name: rsync_name,
+          setup_command: setup_command,
+          slave_command: slave_command,
+          worker_type: worker_type,
+          max_workers: max_workers,
+          max_trials: max_trials,
+          taskset_class: taskset_class,
+        )
+        tasks.each do |task|
+        end
       end
 
       def dequeue_task(ws, taskset_ref)
@@ -19,9 +42,6 @@ module RRRSpec
       end
 
       def query_taskset_status(ws, taskset_ref)
-      end
-
-      def listen_to_taskset(ws, taskset_ref)
       end
     end
 
@@ -91,9 +111,11 @@ module RRRSpec
         @global_notificator = GlobalNotificator.new
       end
 
+      # close handles the websocket close events
       def close(ws)
         @taskset_notificator.close(ws)
         @global_notificator.close(ws)
+        nil
       end
     end
   end

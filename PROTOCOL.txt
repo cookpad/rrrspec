@@ -29,6 +29,11 @@ AverageSec : Int
 
 # Master
 
+## Notification
+
+listen_to_global : () -> ()
+listen_to_taskset : TasksetRef -> ()
+
 ## SpecAverageSec
 
 query_spec_average_sec : SpecSHA1 -> AverageSec
@@ -40,7 +45,6 @@ dequeue_task : TasksetRef -> (TaskRef, SpecPath, HardTimeoutSec, SoftTimeoutSec)
 try_finish_taskset : TasksetRef -> ()
 fail_taskset : TasksetRef -> ()
 query_taskset_status : TasksetRef -> TasksetStatus
-listen_to_taskset : TasksetRef -> ()
 
 ## Task
 
@@ -82,9 +86,14 @@ query_taskset : () -> TasksetRef
 
 taskset_updated : Timestamp -> TasksetRef -> Hash -> ()
 task_updated : Timestamp -> TaskRef -> Hash -> ()
-trial_created : Timestamp -> TrialRef -> TaskRef -> SlaveRef -> StartedAt -> ()
+trial_created : Timestamp -> TrialRef -> TaskRef -> SlaveRef -> CreatedAt -> ()
 trial_updated : Timestamp -> TrialRef -> TaskRef -> FinishedAt -> TrialStatus -> PassedCount -> PendingCount -> FailedCount -> ()
 worker_log_created : Timestamp -> WorkerLogRef -> WorkerName -> ()
 worker_log_updated : Timestamp -> WorkerLogRef -> Hash -> ()
 slave_created : Timestamp -> SlaveRef -> SlaveName -> ()
 slave_updated : Timestamp -> SlaveRef -> Hash -> ()
+
+# GlobalNotification
+
+taskset_craeted : Timestamp -> TasksetRef -> CreatedAt -> RSyncName -> WorkerType -> TasksetClass -> ()
+taskset_updated : Timestamp -> TasksetRef -> Hash -> ()
