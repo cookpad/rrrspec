@@ -28,38 +28,74 @@ module RRRSpec
           max_trials: max_trials,
           taskset_class: taskset_class,
         )
-        tasks.each do |task|
+        tasks.each do |task_args|
+          spec_path, spec_sha1, hard_timeout_sec, soft_timeout_sec = task_args
+          task = taskset.tasks.create(
+            spec_path: spec_path,
+            spec_sha1: spec_sha1,
+            hard_timeout_sec: hard_timeout_sec,
+            soft_timeout_sec: soft_timeout_sec,
+          )
+          taskset.enqueue(task)
         end
+        # TODO: Enqueue the taskset
+        # TODO: Dispatching
+        taskset.to_ref
       end
 
       def dequeue_task(ws, taskset_ref)
+        task = Taskset.from_ref(taskset_ref).dequeue
+        if task
+          [task.to_ref, task.spec_path, task.hard_timeout_sec, task.soft_timeout_sec]
+        else
+          nil
+        end
       end
 
       def try_finish_taskset(ws, taskset_ref)
+        # TODO
       end
 
       def fail_taskset(ws, taskset_ref)
+        Taskset.from_ref(taskset_ref).fail
+        nil
+      end
+
+      def cancel_taskset(ws, taskset_ref)
+        Taskset.from_ref(taskset_ref).cancel
+        nil
       end
 
       def query_taskset_status(ws, taskset_ref)
+        Taskset.from_ref(taskset_ref).status
       end
     end
 
     module TaskQuery
       def reversed_enqueue_task(ws, task_ref)
+        Task.from_ref(task_ref).reversed_enqueue
+        nil
       end
     end
 
     module TrialQuery
       def create_trial(ws, task_ref, slave_ref, started_at)
+        Task.from_ref(task_ref).trials.create(
+          slave: Slave.from_ref(slave_ref),
+          started_at: started_at,
+        ).to_ref
       end
 
       def finish_trial(ws, trial_ref, finished_at, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+        Trial.from_ref(trial_ref).finish(finished_at, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+        nil
       end
     end
 
     module WorkerQuery
-      def current_taskset(ws, worker_ref, taskset_ref)
+      def current_taskset(ws, worker_name, taskset_ref)
+        Worker.with_name(worker_name).current_taskset = Taskset.from_ref(taskset_ref)
+        nil
       end
     end
 

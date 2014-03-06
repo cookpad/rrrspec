@@ -15,7 +15,6 @@ RSyncServer : String
 RSyncOption : String
 RSyncDir : String
 RSyncName : String
-WorkerRef : Reference
 WorkerLogRef : Reference
 SetupCommand : String
 SlaveCommand : String
@@ -41,9 +40,10 @@ query_spec_average_sec : SpecSHA1 -> AverageSec
 ## Taskset
 
 create_taskset : (RSyncName, SetupCommand, SlaveCommand, WorkerType, TasksetClass, MaxWorkers, MaxTrials, [Task]) -> TasksetRef
-dequeue_task : TasksetRef -> (TaskRef, SpecPath, HardTimeoutSec, SoftTimeoutSec)
+dequeue_task : TasksetRef -> Maybe (TaskRef, SpecPath, HardTimeoutSec, SoftTimeoutSec)
 try_finish_taskset : TasksetRef -> ()
 fail_taskset : TasksetRef -> ()
+cancel_taskset : TasksetRef -> ()
 query_taskset_status : TasksetRef -> TasksetStatus
 
 ## Task
@@ -57,7 +57,7 @@ finish_trial : TrialRef -> FinishedAt -> TrialStatus -> StdOut -> StdErr -> Pass
 
 ## Worker
 
-current_taskset : WorkerRef -> Maybe TasksetRef -> ()
+current_taskset : WorkerName -> Maybe TasksetRef -> ()
 
 ## WorkerLog
 
