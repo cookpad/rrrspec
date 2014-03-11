@@ -50,7 +50,7 @@ module RRRSpec
           end
         end
 
-        [status, outbuf, errbuf]
+        [outbuf, errbuf, status]
       end
 
       def run(*formatters)
@@ -71,7 +71,7 @@ module RRRSpec
           status = true
         end
 
-        [status, outbuf, errbuf]
+        [outbuf, errbuf, status]
       end
 
       def reset

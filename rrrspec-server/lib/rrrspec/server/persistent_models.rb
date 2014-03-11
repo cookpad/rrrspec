@@ -1,5 +1,3 @@
-require 'redis-objects'
-
 module RRRSpec
   module Server
     module Persistence
@@ -19,16 +17,41 @@ module RRRSpec
         end
       end
 
+      class TaskQueue
+        def initialize(taskset_id)
+          @key = ['rrrspec', 'Taskset', taskset_ref[1].to_s, 'queue'].join(':')
+        end
+
+        def enqueue(task)
+          RRRSpec.redis.rpush(@key, task.id)
+        end
+
+        def reversed_enqueue(task)
+          RRRSpec.redis.lpush(@key, task.id)
+        end
+
+        def dequeue(task)
+          task_id = RRRSpec.redis.lpop(@key)
+          task_id ? Task.find_by_id(task_id) : nil
+        end
+
+        def clear
+          RRRSpec.redis.delete(@key)
+        end
+      end
+
       class Taskset < ActiveRecord::Base
-        include Redis::Objects
         include JSONConstructor::TasksetJSONConstructor
-        include LogFilePersister
+        include LargeStringProperty
         include TypeIDReferable
         has_many :worker_logs
         has_many :slaves
         has_many :tasks
-        save_as_file :log, suffix: 'log'
-        list :queue
+        large_string :log
+
+        def self.dispatch
+          # TODO
+        end
 
         def self.full
           includes(
@@ -38,42 +61,41 @@ module RRRSpec
           )
         end
 
-        def enqueue(task)
-          queue.push(task.id)
-        end
-
-        def reversed_enqueue(task)
-          queue.unshift(task.id)
-        end
-
-        def dequeue(task)
-          Task.find_by_id(queue.shift)
+        def queue
+          @queue ||= TaskQueue.new(id)
         end
 
         def fail
-          if status.blank? || status == 'running'
-            update_attributes(
-              status: 'failed',
-              finished_at: Time.zone.now,
-            )
-            clear_queue
-          end
+          finish('failed')
         end
 
         def cancel
+          finish('cancel')
+        end
+
+        def finish(status)
           if status.blank? || status == 'running'
-            update_attributes(
-              status: 'cancel',
-              finished_at: Time.zone.now,
-            )
-            clear_queue
+            update_attributes(status: status, finished_at: Time.zone.now)
+            queue.clear
           end
         end
 
-        private
+        def try_finish
+          return if status.present?
+          unfinished_tasks = tasks.where(status: '').includes(:trials).select do |task|
+            task.try_finish(taskset.max_trials)
+          end
 
-        def clear_queue
-          redis.delete(queue.key)
+          if unfinished_tasks.empty?
+            finish(tasks.where(status: 'failed').count > 0 ? 'failed' : 'succeeded')
+          elsif queue.empty?
+            requeue_speculative(unfinished_tasks)
+          end
+        end
+
+        def requeue_speculative(tasks)
+          groups = tasks.group_by { |task| task.trials.size }
+          groups[groups.keys.min].sample.enqueue
         end
       end
 
@@ -84,26 +106,51 @@ module RRRSpec
         has_many :trials
 
         def enqueue
-          taskset.enqueue(self)
+          TaskQueue.new(taskset_id).enqueue(self)
         end
 
         def reversed_enqueue
-          taskset.reversed_enqueue(self)
+          TaskQueue.new(taskset_id).reversed_enqueue(self)
+        end
+
+        def try_finish(max_trials=taskset.max_trials)
+          return true if status.present?
+
+          statuses = trials.pluck(:status)
+          case
+          when statuses.include?('passed')
+            update_attributes(status: 'passed')
+            true
+          when statuses.include?('pending')
+            update_attributes(status: 'pending')
+            true
+          when statuses.include?('')
+            false
+          else
+            faileds = statuses.count { |status| ['failed', 'error', 'timeout'].include?(status) }
+            if faileds >= max_trials
+              update_attributes(status: 'failed')
+              true
+            else
+              reversed_enqueue
+              false
+            end
+          end
         end
       end
 
       class Trial < ActiveRecord::Base
         include JSONConstructor::TrialJSONConstructor
-        include LogFilePersister
+        include LargeStringProperty
         include TypeIDReferable
         belongs_to :task
         belongs_to :slave
-        save_as_file :stdout, suffix: 'stdout'
-        save_as_file :stderr, suffix: 'stderr'
+        large_string :stdout
+        large_string :stderr
 
-        def finish(finished_at, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+        def finish(trial_status, stdout, stderr, passed_count, pending_count, failed_count)
           update_attributes(
-            finished_at: finished_at,
+            finished_at: Time.zone.now,
             status: trial_status,
             stdout: stdout,
             stderr: stderr,
@@ -111,6 +158,7 @@ module RRRSpec
             pending: pending_count,
             failed: failed_count,
           )
+          task.try_finish
         end
       end
 
@@ -138,14 +186,14 @@ module RRRSpec
 
         attr_reader :name, :updated_at
 
-        def current_taskset
-          Taskset.from_ref(@current_taskset_ref)
+        def current_taskset_ref
+          @current_taskset_ref
         end
 
-        def current_taskset=(taskset)
-          @current_taskset_ref = taskset ? taskset.ref : nil
+        def current_taskset_ref=(taskset_ref)
+          @current_taskset_ref = taskset_ref ? taskset_ref : nil
           @updated_at = Time.zone.now
-          taskset
+          taskset_ref
         end
 
         private
@@ -159,18 +207,26 @@ module RRRSpec
 
       class WorkerLog < ActiveRecord::Base
         include JSONConstructor::WorkerLogJSONConstructor
-        include LogFilePersister
+        include LargeStringProperty
         include TypeIDReferable
         belongs_to :taskset
-        save_as_file :log, suffix: 'worker_log'
+        large_string :log
+
+        def finish
+          update_attributes(finished_at: Time.zone.now)
+          log.flush
+        end
       end
 
       class Slave < ActiveRecord::Base
         include JSONConstructor::SlaveJSONConstructor
-        include LogFilePersister
         include TypeIDReferable
         has_many :trials
-        save_as_file :log, suffix: 'slave_log'
+
+        def finish(status)
+          update_attributes(status: status, finished_at: Time.zone.now)
+          log.flush
+        end
       end
     end
   end

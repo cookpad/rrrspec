@@ -10,10 +10,6 @@ FailedCount : Maybe Int
 SpecPath : String
 HardTimeoutSec : Int
 SoftTimeoutSec : Int
-RSyncInfo : (RSyncServer, RSyncOption,  RSyncDir, RSyncName)
-RSyncServer : String
-RSyncOption : String
-RSyncDir : String
 RSyncName : String
 WorkerLogRef : Reference
 SetupCommand : String
@@ -52,8 +48,9 @@ reversed_enqueue_task : TaskRef -> ()
 
 ## Trial
 
-create_trial : TaskRef -> SlaveRef -> StartedAt -> TrialRef
-finish_trial : TrialRef -> FinishedAt -> TrialStatus -> StdOut -> StdErr -> PassedCount -> PendingCount -> FailedCount -> ()
+create_trial : TaskRef -> SlaveRef -> TrialRef
+start_trial : TrialRef -> ()
+finish_trial : TrialRef -> TrialStatus -> StdOut -> StdErr -> PassedCount -> PendingCount -> FailedCount -> ()
 
 ## Worker
 
@@ -61,23 +58,23 @@ current_taskset : WorkerName -> Maybe TasksetRef -> ()
 
 ## WorkerLog
 
-create_worker_log : WorkerName -> WorkerLogRef
+create_worker_log : WorkerName -> TasksetRef -> WorkerLogRef
 append_worker_log_log : WorkerLogRef -> String -> ()
 set_rsync_finished_time : WorkerLogRef -> Datetime -> ()
 set_setup_finished_time : WorkerLogRef -> Datetime -> ()
-set_worker_finished_time : WorkerLogRef -> Datetime -> ()
 finish_worker_log : WorkerLogRef -> ()
 
 ## Slave
 
-create_slave : SlaveName -> SlaveRef
-append_slave_log : SlaveRef -> String -> ()
+create_slave : SlaveName -> TasksetRef -> SlaveRef
 current_trial : SlaveRef -> Maybe TrialRef -> ()
-finish_slave : SlaveRef -> ()
+finish_slave : SlaveRef -> Status -> ()
+force_finish_slave : SlaveName -> Status -> ()
 
 # Worker
 
-assign_taskset : TasksetRef -> RSyncInfo -> SetupCommand -> SlaveCommand -> MaxTrials -> ()
+assign_taskset : TasksetRef -> RSyncName -> SetupCommand -> SlaveCommand -> MaxTrials -> ()
+cancel_current_execution : () -> ()
 query_taskset : () -> TasksetRef
 
 ------------

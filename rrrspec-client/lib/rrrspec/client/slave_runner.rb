@@ -12,19 +12,29 @@ module RRRSpec
       TIMEOUT_EXITCODE = 42
       class SoftTimeoutException < Exception; end
 
-      def initialize(slave, working_dir, taskset_key)
-        @slave = slave
-        @taskset = Taskset.new(taskset_key)
-        @timeout = TASKQUEUE_TASK_TIMEOUT
+      def initialize(taskset_ref)
+        @taskset_ref = taskset_ref
         @rspec_runner = RSpecRunner.new
-        @working_path = File.join(working_dir, @taskset.rsync_name)
-        @unknown_spec_timeout_sec = @taskset.unknown_spec_timeout_sec
-        @least_timeout_sec = @taskset.least_timeout_sec
-        @worked_task_keys = Set.new
+        @worked_task_refs = Set.new
+        @shutdown = false
+        @working_path = ENV['RRRSPEC_WORKING_PATH']
       end
 
-      def work_loop
-        loop { work }
+      def open(transport)
+        if @slave_ref.blank?
+          @slave_ref, err = transport.sync_call(:create_slave, RRRSpec.generate_slave_name, @taskset_ref)
+          EM.defer do
+            begin
+              loop(!@shutdown) { work(transport) }
+            ensure
+              EM.stop_event_loop
+            end
+          end
+        end
+      end
+
+      def close(transport)
+        # Do nothing
       end
 
       def spec_timeout_sec(task)
@@ -39,54 +49,45 @@ module RRRSpec
         return [soft_timeout_sec, @least_timeout_sec].max, [hard_timeout_sec, @least_timeout_sec].max
       end
 
-      def work
-        task = @taskset.dequeue_task(@timeout)
-        unless task
-          @timeout = TASKQUEUE_ARBITER_TIMEOUT
-          ArbiterQueue.check(@taskset)
-        else
-          if @worked_task_keys.include?(task.key)
-            @taskset.reversed_enqueue_task(task)
-            return
-          else
-            @worked_task_keys << task.key
-          end
-          return if task.status.present?
-
-          @timeout = TASKQUEUE_TASK_TIMEOUT
-          trial = Trial.create(task, @slave)
-
-          @rspec_runner.reset
-          status, outbuf, errbuf = @rspec_runner.setup(File.join(@working_path, task.spec_file))
-          unless status
-            trial.finish('error', outbuf, errbuf, nil, nil, nil)
-            ArbiterQueue.trial(trial)
-            return
-          end
-
-          soft_timeout_sec, hard_timeout_sec = spec_timeout_sec(task)
-
-          formatter = RedisReportingFormatter.new
-          trial.start
-          status, outbuf, errbuf = ExtremeTimeout::timeout(
-            hard_timeout_sec, TIMEOUT_EXITCODE
-          ) do
-            Timeout::timeout(soft_timeout_sec, SoftTimeoutException) do
-              @rspec_runner.run(formatter)
-            end
-          end
-          if status
-            trial.finish(formatter.status, outbuf, errbuf,
-                         formatter.passed, formatter.pending, formatter.failed)
-          else
-            trial.finish('error', outbuf, errbuf, nil, nil, nil)
-          end
-
-          ArbiterQueue.trial(trial)
+      def work(transport)
+        task, err = transport.sync_call(:dequeue_task, @taskset_ref)
+        if task.blank?
+          @shutdown = true
+          return
         end
+        task_ref, spec_path, hard_timeout_sec, soft_timeout_sec = task
+        if @worked_task_refs.include?(task_ref)
+          transport.send(:reversed_enqueue_task, task_ref)
+          return
+        end
+
+        trial_ref, err = transport.sync_call(:create_trial, task_ref, @slave_ref)
+        transport.send(:current_trial, @slave_ref, trial_ref)
+        @rspec_runner.reset
+        stdout, stderr, status = @rspec_runner.setup(File.join(@working_path, spec_path))
+        unless status
+          transport.send(:finish_trial, trial_ref, 'error', stdout, stderr, nil, nil, nil)
+          return
+        end
+
+        transport.send(:start_trial, trial_ref)
+        formatter = InspectingFormatter.new
+        stdout, stderr, status = ExtremeTimeout::timeout(hard_timeout_sec, TIMEOUT_EXITCODE) do
+          Timeout::timeout(soft_timeout_sec, SoftTimeoutException) do
+            @rspec_runner.run(formatter)
+          end
+        end
+        if status
+          transport.send(:finish_trial, trial_ref, formatter.status, stdout, stderr,
+                         formatter.passed, formatter.pending, formatter.failed)
+        else
+          transport.send(:finish_trial, trial_ref, 'error', stdout, stderr, nil, nil, nil)
+        end
+      ensure
+        transport.send(:current_trial, @slave_ref, nil)
       end
 
-      class RedisReportingFormatter
+      class InspectingFormatter
         attr_reader :passed, :pending, :failed
 
         def initialize
