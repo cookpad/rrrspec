@@ -54,15 +54,15 @@ finish_trial : TrialRef -> TrialStatus -> StdOut -> StdErr -> PassedCount -> Pen
 
 ## Worker
 
-current_taskset : WorkerName -> Maybe TasksetRef -> ()
+current_taskset : WorkerName -> WorkerType -> Maybe TasksetRef -> ()
 
 ## WorkerLog
 
 create_worker_log : WorkerName -> TasksetRef -> WorkerLogRef
 append_worker_log_log : WorkerLogRef -> String -> ()
-set_rsync_finished_time : WorkerLogRef -> Datetime -> ()
-set_setup_finished_time : WorkerLogRef -> Datetime -> ()
-finish_worker_log : WorkerLogRef -> ()
+set_rsync_finished_time : WorkerLogRef -> ()
+set_setup_finished_time : WorkerLogRef -> ()
+set_rspec_finished_time : WorkerLogRef -> ()
 
 ## Slave
 

@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+require 'daemons'
+require 'eventmachine'
+require 'optparse'
+require 'rack'
+require 'thin'
+require 'rrrspec/server/applications'
+
+Faye::WebSocket.load_adapter('thin')
+
+options = {}
+OptionParser.new do |opts|
+  opts.on("--redis REDIS_URL") do |url|
+    options[:redis] = { url: url }
+  end
+
+  opts.on("--execute-log-text-path PATH") do |path|
+    options[:execute_log_text_path] = File.absolute_path(path)
+  end
+
+  opts.on("--json-cache-path PATH") do |path|
+    options[:json_cache_path] = File.absolute_path(path)
+  end
+end.parse!
+
+app = RRRSpec::Server.master_app(options)
+
+Daemons.run_proc('rrrspec-master') do
+  EM.run do
+    thin = Rack::Handler.get('thin')
+    thin.run(app)
+  end
+end

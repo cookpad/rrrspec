@@ -1,4 +1,0 @@
-#!/usr/bin/env ruby
-
-require 'rrrspec/server/cli'
-RRRSpec::Server::CLI.start

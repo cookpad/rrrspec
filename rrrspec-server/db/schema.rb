@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140304025444) do
+ActiveRecord::Schema.define(version: 20140313020536) do
 
   create_table "slaves", force: true do |t|
     t.string   "name"
@@ -25,23 +25,21 @@ ActiveRecord::Schema.define(version: 20140304025444) do
   add_index "slaves", ["taskset_id"], name: "index_slaves_on_taskset_id"
 
   create_table "tasks", force: true do |t|
-    t.string   "key"
     t.integer  "taskset_id"
     t.string   "status"
-    t.integer  "estimate_sec"
-    t.string   "spec_file"
+    t.string   "spec_path"
     t.integer  "hard_timeout_sec"
     t.integer  "soft_timeout_sec"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "spec_sha1"
   end
 
-  add_index "tasks", ["key"], name: "index_tasks_on_key"
+  add_index "tasks", ["spec_sha1"], name: "index_tasks_on_spec_sha1"
   add_index "tasks", ["status"], name: "index_tasks_on_status"
   add_index "tasks", ["taskset_id"], name: "index_tasks_on_taskset_id"
 
   create_table "tasksets", force: true do |t|
-    t.string   "key"
     t.string   "rsync_name"
     t.text     "setup_command", limit: 4294967295
     t.text     "slave_command", limit: 4294967295
@@ -56,13 +54,11 @@ ActiveRecord::Schema.define(version: 20140304025444) do
   end
 
   add_index "tasksets", ["created_at"], name: "index_tasksets_on_created_at"
-  add_index "tasksets", ["key"], name: "index_tasksets_on_key"
   add_index "tasksets", ["rsync_name"], name: "index_tasksets_on_rsync_name"
   add_index "tasksets", ["status"], name: "index_tasksets_on_status"
   add_index "tasksets", ["taskset_class"], name: "index_tasksets_on_taskset_class"
 
   create_table "trials", force: true do |t|
-    t.string   "key"
     t.integer  "task_id"
     t.integer  "slave_id"
     t.datetime "started_at"
@@ -75,23 +71,21 @@ ActiveRecord::Schema.define(version: 20140304025444) do
     t.datetime "updated_at"
   end
 
-  add_index "trials", ["key"], name: "index_trials_on_key"
   add_index "trials", ["slave_id"], name: "index_trials_on_slave_id"
+  add_index "trials", ["status"], name: "index_trials_on_status"
   add_index "trials", ["task_id"], name: "index_trials_on_task_id"
 
   create_table "worker_logs", force: true do |t|
-    t.string   "key"
     t.string   "worker_name"
     t.integer  "taskset_id"
     t.datetime "started_at"
     t.datetime "rsync_finished_at"
     t.datetime "setup_finished_at"
-    t.datetime "finished_at"
+    t.datetime "rspec_finished_at"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  add_index "worker_logs", ["key"], name: "index_worker_logs_on_key"
   add_index "worker_logs", ["taskset_id"], name: "index_worker_logs_on_taskset_id"
   add_index "worker_logs", ["worker_name"], name: "index_worker_logs_on_worker_name"
 

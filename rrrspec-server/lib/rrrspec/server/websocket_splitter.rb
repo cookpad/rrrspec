@@ -1,15 +1,16 @@
 module RRRSpec
   module Server
-    class WebsocketSplitter
-      def initialize(handler)
+    class WebSocketSplitter
+      def initialize(handler, throw_exception=false)
         @handler = handler
+        @throw_exception = throw_exception
       end
 
       def call(env)
-        if Feye::Websocket.websocket?(env)
-          WebsocketTransport.new(@handler, Feye::Websocket.new(env)).rack_response
+        if Faye::WebSocket.websocket?(env)
+          WebSocketTransport.new(@handler, Faye::WebSocket.new(env), @throw_exception).rack_response
         else
-          HTTPPostTransport.new(@handler, env).rack_response
+          HTTPPostTransport.new(@handler, env, @throw_exception).rack_response
         end
       end
     end

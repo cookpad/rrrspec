@@ -1,33 +1,34 @@
 module RRRSpec
   module Server
     class JSONRPCTransport
-      def initialize(handler)
+      def initialize(handler, throw_exception=false)
         @handler = handler
+        @throw_exception = throw_exception
       end
 
       protected
 
       def process_request(request)
         begin
-          result = @handler.send(request['method'], self, *request['params'])
+          result = @handler.__send__(request['method'], self, *request['params'])
           if request['id']
             MultiJson.dump({result: result, error: nil, id: request['id']})
           else
             nil
           end
         rescue Exception => e
-          if request['id']
-            MultiJson.dump({result: nil, error: e.message, id: request['id']})
-          else
+          if @throw_exception || !request['id']
             raise
+          else
+            MultiJson.dump({result: nil, error: e.message, id: request['id']})
           end
         end
       end
     end
 
-    class WebsocketTransport < JSONRPCTransport
-      def initialize(handler, ws)
-        super(handler)
+    class WebSocketTransport < JSONRPCTransport
+      def initialize(handler, ws, throw_exception=false)
+        super(handler, throw_exception)
         @ws = ws
         @message_id = 0
         @waitings = Hash.new
@@ -52,11 +53,11 @@ module RRRSpec
         @ws.rack_response
       end
 
-      def send(method, **params)
+      def send(method, *params)
         @ws.send(MultiJson.dump(method: method, params: params, id: nil))
       end
 
-      def sync_call(method, **params)
+      def sync_call(method, *params)
         message_id = (@message_id += 1)
         @waitings[message_id] = Fiber.current
         @ws.send(MultiJson.dump(method: method, params: params, id: message_id))
@@ -84,8 +85,8 @@ module RRRSpec
     end
 
     class HTTPPostTransport < JSONRPCTransport
-      def initialize(handler, env)
-        super(handler)
+      def initialize(handler, env, throw_exception=false)
+        super(handler, throw_exception)
         @request = Rack::Request.new(env)
       end
 

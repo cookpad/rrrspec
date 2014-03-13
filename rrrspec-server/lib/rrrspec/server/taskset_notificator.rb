@@ -1,5 +1,3 @@
-require 'set'
-
 module RRRSpec
   module Server
     module TasksetEventReceptor
@@ -12,7 +10,7 @@ module RRRSpec
           end
         end
         return if changes.empty?
-        send_notification(taskset.ref, taskset, :taskset_updated,
+        send_notification(taskset.to_ref, taskset, :taskset_updated,
                           changes)
       end
 
@@ -97,7 +95,7 @@ module RRRSpec
       private
 
       def send_notification(taskset_ref, object, method, *params)
-        params = [object.updated_at, object.ref] + params
+        params = [object.updated_at, object.to_ref] + params
         @taskset_to_ws[taskset_ref].each do |ws|
           ws.send(MultiJson.dump({
             method: method, params: params, id: nil,
@@ -143,7 +141,7 @@ module RRRSpec
       private
 
       def send_notification(object, method, *params)
-        params = [object.updated_at, object.ref] + params
+        params = [object.updated_at, object.to_ref] + params
         @wsockets.each do |ws|
           ws.send(MultiJson.dump({
             method: method, params: params, id: nil,

@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+require 'eventmachine'
+require 'rrrspec/slave'
+
+app = RRRSpec::Slave.slave_app(options)
+EM.run { app.run }

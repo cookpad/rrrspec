@@ -1,60 +1,18 @@
-require 'facter'
-
 module RRRSpec
   module Server
-    class ServerConfiguration < Configuration
-      attr_accessor :persistence_db
-      attr_accessor :execute_log_text_path
-      attr_accessor :json_cache_path
+    MasterConfig = Struct.new(
+      :redis,
+      :execute_log_text_path,
+      :json_cache_path,
+    )
 
-      def initialize
-        super()
-        @type = :server
-      end
-
-      def check_validity
-        validity = super
-
-        unless execute_log_text_path
-          $stderr.puts('The path to save the log text should be set')
-          validity = false
-        end
-
-        unless persistence_db
-          $stderr.puts('The database options are not set')
-          validity = false
-        end
-
-        validity
-      end
-    end
-
-    class WorkerConfiguration < Configuration
-      attr_accessor :rsync_remote_path, :rsync_options
-      attr_accessor :working_dir, :worker_type, :slave_processes
-
-      def initialize
-        super()
-        @slave_processes = Facter.processorcount.to_i
-        @worker_type = 'default'
-        @type = :worker
-      end
-
-      def check_validity
-        validity = super
-
-        unless rsync_remote_path and rsync_options
-          $stderr.puts('The rsync options are not set')
-          validity = false
-        end
-
-        unless working_dir and worker_type
-          $stderr.puts('The worker options are not set')
-          validity = false
-        end
-
-        validity
-      end
-    end
+    WorkerConfig = Struct.new(
+      :master_url,
+      :rsync_remote_path,
+      :rsync_options,
+      :working_dir,
+      :worker_type,
+      :slave_processes,
+    )
   end
 end

@@ -15,13 +15,6 @@ module RRRSpec
         def setup(conf)
           RRRSpec.setup(conf, options[:config].split(':'))
         end
-
-        def log_exception
-          yield
-        rescue
-          RRRSpec.logger.error($!)
-          raise
-        end
       end
 
       option :'key-only', type: :boolean
@@ -104,24 +97,6 @@ module RRRSpec
 
         if taskset.status != 'succeeded'
           exit options[:'failure-exit-code']
-        end
-      end
-
-      desc 'slave', 'run RRRSpec as a slave'
-      def slave(working_dir=nil, taskset_key=nil)
-        $0 = 'rrrspec slave'
-        working_dir ||= ENV['RRRSPEC_WORKING_DIR']
-        taskset_key ||= ENV['RRRSPEC_TASKSET_KEY']
-        exit 1 unless taskset_key && working_dir
-
-        setup(Configuration.new)
-        log_exception do
-          slave = Slave.create
-          slave_runner = SlaveRunner.new(slave, working_dir, taskset_key)
-          Thread.abort_on_exception = true
-          Thread.fork { RRRSpec.pacemaker(slave, 60, 5) }
-          Thread.fork { slave_runner.work_loop }
-          Kernel.sleep
         end
       end
     end

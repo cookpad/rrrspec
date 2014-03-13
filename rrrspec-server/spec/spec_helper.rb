@@ -8,7 +8,7 @@ require 'rrrspec/server'
 require 'tmpdir'
 require 'database_cleaner'
 require 'timecop'
-require 'fixture'
+require 'test_transport'
 
 RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
@@ -42,13 +42,14 @@ RSpec.configure do |config|
     end
   end
 
-  config.before(:each) do
-    @redis = Redis.new(port: 9999)
-    @redis.flushall
+  config.include TestTransportHelper
 
-    RRRSpec.configuration = nil
-    RRRSpec.flushredis
-    RRRSpec.hostname = 'testhostname'
+  config.before(:each) do
+    RRRSpec.config = nil
+    RRRSpec::Server.flushredis
+
+    RRRSpec::Server.redis = Redis.new(port: 9999)
+    RRRSpec::Server.redis.flushall
   end
 
   config.after(:suite) do

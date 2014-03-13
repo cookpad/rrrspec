@@ -1,2 +1,17 @@
 require "bundler/gem_tasks"
 load File.expand_path('../tasks/db.rake', __FILE__)
+
+namespace :rrrspec do
+  namespace :server do
+    desc "test_migration"
+    task :test_migration do
+      ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+      ActiveRecord::Migrator.migrations_paths = [RRRSpec::Server::MIGRATIONS_DIR]
+
+      ActiveRecord::Migrator.migrate(ActiveRecord::Migrator.migrations_paths)
+      File.open(File.expand_path('../db/schema.rb', __FILE__), "w:utf-8") do |file|
+        ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection, file)
+      end
+    end
+  end
+end

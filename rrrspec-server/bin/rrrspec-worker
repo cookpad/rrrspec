@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+require 'daemons'
+require 'eventmachine'
+require 'optparse'
+require 'rrrspec/server/applications'
+
+options = {}
+OptionParser.new do |opts|
+  opts.on("--master-url MASTER_URL") do |url|
+    options[:master_url] = url
+  end
+
+  opts.on("--rsync-remote-path PATH") do |path|
+    options[:rsync_remote_path] = path
+  end
+
+  opts.on("--rsync-options PATH") do |path|
+    options[:rsync_options] = path
+  end
+
+  opts.on("--working-dir PATH") do |path|
+    options[:working_dir] = path
+  end
+
+  opts.on("--worker-type PATH") do |path|
+    options[:worker_type] = path
+  end
+
+  opts.on("--slave-processes NUM", OptionParser::DecimalInteger) do |num|
+    options[:slave_processes] = num
+  end
+end.parse!
+
+app = RRRSpec::Server.worker_app(options)
+
+Daemons.run_proc('rrrspec-worker') do
+  EM.run { app.run }
+end

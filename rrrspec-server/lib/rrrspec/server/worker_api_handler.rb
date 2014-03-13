@@ -29,7 +29,7 @@ module RRRSpec
       end
     end
 
-    class WorkerRunner
+    class WorkerAPIHandler
       TIMEOUT_EXITCODE = 42
       HEARTBEAT_SEC = 55
 
@@ -52,18 +52,18 @@ module RRRSpec
       def assign_taskset(transport, taskset_ref, rsync_name, setup_command, slave_command, max_trials)
         return nil if @current_taskset.present?
 
-        worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec.generate_worker_name, taskset_ref)
+        worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec::Server.generate_worker_name, taskset_ref)
         logger = RPCLogger.new(transport, :append_worker_log_log, worker_log_ref)
 
         @current_taskset = taskset_ref
         update_current_taskset
 
-        working_path = File.join(RRRSpec.configuration.working_dir, rsync_name)
+        working_path = File.join(RRRSpec.config.working_dir, rsync_name)
 
         actions = {
           rsync: -> { rsync(logger, working_path,
-                            RRRSpec.configuration.rsync_options,
-                            RRRSpec.configuration.rsync_remote_path,
+                            RRRSpec.config.rsync_options,
+                            RRRSpec.config.rsync_remote_path,
                             rsync_name) },
           setup: -> { setup(logger, working_path, setup_command) },
           rspec: -> { rspec(transport, logger, working_path, taskset_ref, slave_command, max_trials) },
@@ -71,7 +71,7 @@ module RRRSpec
 
         [:rsync, :setup, :rspec].each do |action|
           logger.write("Start #{action}")
-          transport.send("set_#{action}_finished_time", worker_log_ref, Time.zone.now)
+          transport.send("set_#{action}_finished_time", worker_log_ref)
           if actions[action].call
             logger.write("Finish #{action}")
           else
@@ -98,7 +98,10 @@ module RRRSpec
       private
 
       def update_current_taskset
-        transport.send(:current_taskset, RRRSpec.generate_worker_name, @current_taskset)
+        transport.send(:current_taskset,
+                       RRRSpec.generate_worker_name,
+                       RRRSpec.config.worker_type,
+                       @current_taskset)
       end
 
       def rsync(logger, working_path, rsync_options, rsync_remote_path, rsync_name)
@@ -106,14 +109,14 @@ module RRRSpec
         CommandExecutor.batch(
           logger,
           "rsync #{rsync_options} #{File.join(rsync_remote_path, rsync_name)}/ #{working_path}",
-          chdir: RRRSpec.configuration.working_dir,
+          chdir: RRRSpec.config.working_dir,
         ).success?
       end
 
       def setup(logger, working_path, setup_command)
         CommandExecutor.batch(
           logger,
-          { 'NUM_SLAVES' => RRRSpec.configuration.slave_processes.to_s },
+          { 'NUM_SLAVES' => RRRSpec.config.slave_processes.to_s },
           '/bin/bash -ex',
           chdir: working_path,
           stdin_text: setup_command,
@@ -122,17 +125,19 @@ module RRRSpec
 
       def rspec(transport, logger, working_path, taskset_ref, slave_command, max_trials)
         trials = 1
-        RRRSpec.configuration.slave_processes.times.map do |i|
+        RRRSpec.config.slave_processes.times.map do |i|
           slave_number = i
           Thread.fork do
             loop(!@shutdown) do
+              uuid = SecureRandom.uuid
               status = CommandExecutor.batch(
                 logger,
                 {
-                  'NUM_SLAVES' => RRRSpec.configuration.slave_processes.to_s,
-                  'RRRSPEC_CONFIG_FILES' => RRRSpec.configuration.loaded.join(':'),
+                  'NUM_SLAVES' => RRRSpec.config.slave_processes.to_s,
+                  'RRRSPEC_MASTER_URL' => RRRSpec.config.master_url,
+                  'RRRSPEC_TASKSET_ID' => taskset_ref[1].to_s,
                   'RRRSPEC_WORKING_PATH' => working_path,
-                  'RRRSPEC_TASKSET_KEY' => taskset.key,
+                  'RRRSPEC_SLAVE_UUID' => uuid,
                   'SLAVE_NUMBER' => slave_number.to_s,
                 },
                 '/bin/bash -ex',
@@ -143,7 +148,7 @@ module RRRSpec
 
               exit_code = (status.to_i >> 8)
               slave_status = (exit_code == TIMEOUT_EXITCODE) ? 'timeout_exit' : 'failure_exit'
-              transport.send(:force_finish_slave, RRRSpec.generate_slave_name(status.pid), slave_status)
+              transport.send(:force_finish_slave, RRRSpec::Slave.generate_slave_name(uuid), slave_status)
               trials += 1
               if trials > max_trials
                 @shutdown = true
