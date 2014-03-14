@@ -99,6 +99,11 @@ module RRRSpec
           nil
         end
 
+        def cancel_user_taskset(ws, rsync_name)
+          # TODO
+          nil
+        end
+
         def query_taskset_status(ws, taskset_ref)
           Taskset.from_ref(taskset_ref).status
         end

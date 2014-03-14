@@ -1,103 +1,201 @@
-require 'rrrspec/client'
-require 'launchy'
-require 'thor'
-
 module RRRSpec
   module Client
-    class CLI < Thor
-      WAIT_POLLING_SEC = 10
+    class CLIAPIHandler
+      def initialize(command, options)
+        @command = command
+        @options = options
+      end
 
-      package_name 'RRRSpec'
-      default_command 'help'
-      class_option :config, aliases: '-c',  type: :string, default: ''
+      def open(transport)
+      end
 
-      no_commands do
-        def setup(conf)
-          RRRSpec.setup(conf, options[:config].split(':'))
+      def close(transport)
+        EM.stop_event_loop
+      end
+
+      def start(transport)
+        rsync_name = @options[:rsync_name] || RRRSpec.config.rsync_name || ENV['USER']
+        worker_type = @options[:worker_type] || RRRSpec.config.worker_type
+
+        taskset_ref = TasksetBuilder.build_and_start(
+          transport,
+          rsync_name,
+          RRRSpec.config.setup_command,
+          RRRSpec.config.slave_command,
+          worker_type,
+          RRRSpec.config.taskset_class,
+          RRRSpec.config.max_workers,
+          RRRSpec.config.max_trials,
+          RRRSpec.config.tasks
+        )
+        puts taskset_ref[1]
+        transport.close
+      end
+
+      def cancel(transport)
+        taskset_id = ARGV.shift
+        if taskset_id
+          taskset_ref = [:taskset, taskset_id]
+          transport.send(:cancel_taskset, taskset_ref)
+          transport.close
+        else
+          raise "Specify the taskset id"
         end
       end
 
-      option :'key-only', type: :boolean
-      option :'rsync-name', type: :string, default: ENV['USER']
-      option :'worker-type', type: :string
-      desc 'start', 'start RRRSpec'
-      def start
-        setup(ClientConfiguration.new)
-        if options[:'worker-type']
-          RRRSpec.configuration.worker_type = options[:'worker-type']
-        end
-        taskset = Support.start_taskset(RRRSpec.configuration, options[:'rsync-name'])
-        puts taskset.key
-
-        if RRRSpec.configuration.rrrspec_web_base && !options[:'key-only']
-          url = "#{RRRSpec.configuration.rrrspec_web_base}/tasksets/#{taskset.key}"
-          Launchy.open(url)
+      def cancelall(transport)
+        rsync_name = ARGV.shift
+        if rsync_name
+          transport.send(:cancel_user_taskset, rsync_name)
+          transport.close
+        else
+          raise "Specify the rsync name"
         end
       end
 
-      desc 'cancel', 'cancel the taskset'
-      def cancel(taskset_id)
-        setup(Configuration.new)
-        taskset = Taskset.new(taskset_id)
-        exit(1) unless taskset.exist?
-        taskset.cancel
+      def actives(transport)
+        # TODO
+        transport.close
       end
 
-      desc 'cancelall', 'cancel all tasksets whose rsync name is specified name'
-      def cancelall(rsync_name)
-        setup(Configuration.new)
-        ActiveTaskset.all_tasksets_of(rsync_name).each do |taskset|
-          taskset.cancel
-        end
+      def nodes(transport)
+        # TODO
+        transport.close
       end
 
-      desc 'actives', 'list up the active tasksets'
-      def actives
-        setup(Configuration.new)
-        ActiveTaskset.list.each { |taskset| puts taskset.key }
-      end
-
-      desc 'nodes', 'list up the active nodes'
-      def nodes
-        setup(Configuration.new)
-        puts "Workers:"
-        Worker.list.each { |worker| puts "\t#{worker.key}" }
-      end
-
-      option :pollsec, type: :numeric, default: WAIT_POLLING_SEC
-      desc 'waitfor', 'wait for the taskset'
-      def waitfor(taskset_id)
-        setup(Configuration.new)
-        taskset = Taskset.new(taskset_id)
-        exit(1) unless taskset.exist?
-
-        rd, wt = IO.pipe
-        Signal.trap(:TERM) { wt.write("1") }
-        Signal.trap(:INT) { wt.write("1") }
-
-        loop do
-          rs, ws, = IO.select([rd], [], [], options[:pollsec])
-          if rs == nil
-            break if taskset.persisted?
-          elsif rs.size != 0
-            rs[0].getc
-            taskset.cancel
+      def waitfor(transport)
+        taskset_id = ARGV.shift
+        if taskset_id
+          @exit_if_taskset_finished = true
+          taskset_ref = [:taskset, taskset_id]
+          transport.sync_call(:listen_to_taskset, taskset_ref)
+          status = transport.sync_call(:query_taskset_status, taskset_ref)
+          if ['cancelled', 'failed', 'succeeded'].include?(status)
+            transport.close
           end
+        else
+          raise "Specify the taskset id"
         end
       end
 
-      option :'failure-exit-code', type: :numeric, default: 1
-      option :verbose, type: :boolean, default: false
-      desc 'show', 'show the result of the taskset'
-      def show(taskset_id)
-        setup(Configuration.new)
-        taskset = Taskset.new(taskset_id)
-        exit 1 unless taskset.exist?
-        Support.show_result(taskset, options[:verbose])
+      def show(transport)
+        # TODO
+        transport.close
+      end
 
-        if taskset.status != 'succeeded'
-          exit options[:'failure-exit-code']
+      def taskset_updated(transport, timestamp, taskset_ref, h)
+        if @exit_if_taskset_finished && h[:finished_at].present?
+          tranport.close
         end
+      end
+
+      def task_updated(transport, timestamp, task_ref, h)
+        # Do nothing
+      end
+
+      def trial_created(transport, timestamp, trials_ref, task_ref, slave_ref, created_at)
+        # Do nothing
+      end
+
+      def trial_updated(transport, timestamp, trial_ref, task_ref, finished_at, trial_status, passed, pending, failed)
+        # Do nothing
+      end
+
+      def worker_log_created(transport, timestamp, worker_log_ref, worker_name)
+        # Do nothing
+      end
+
+      def worker_log_updated(transport, timestamp, worker_log_ref, h)
+        # Do nothing
+      end
+
+      def slave_created(transport, timestamp, slave_ref, slave_name)
+        # Do nothing
+      end
+
+      def slave_updated(transport, timestamp, slave_ref, h)
+        # Do nothing
+      end
+    end
+
+    module CLI
+      COMMANDS = {
+        'start' => 'start RRRSpec',
+        'cancel' => 'cancel the taskset',
+        'cancelall' => 'cancel all tasksets whose rsync name is specified name',
+        'actives' => 'list up the active tasksets',
+        'nodes' => 'list up the active nodes',
+        'waitfor' => 'wait for the taskset',
+        'show' => 'show the result of the taskset',
+      }
+
+      module_function
+
+      def run
+        options, command, command_options = parse_options
+        setup(options)
+
+        if COMMANDS.include?(command)
+          EM.run do
+            Fiber.new do
+              WebSocketTransport.new(
+                CLICommandHandler.new(command, command_options),
+                Faye::Websocket::Client.new(RRRSpec.config.master_url),
+              )
+            end.resume
+          end
+        else
+          nocommand(command)
+        end
+      end
+
+      def parse_options
+        options = {}
+        command = nil
+        command_options = {}
+
+        OptionParser.new do |opts|
+          opts.on('-c', '--config FILE') { |file| options[:config] = file }
+        end.order!
+
+        command = ARGV.shift
+        case command
+        when 'start'
+          OptionParser.new do |opts|
+            opts.on('--key-only') { |v| command_options[:key_only] = v }
+            opts.on('--rsync-name NAME') { |name| command_options[:rsync_name] = name }
+            opts.on('--worker-type TYPE') { |type| command_options[:worker_type] = type }
+          end.order!
+        when 'cancel'
+        when 'cancelall'
+        when 'actives'
+        when 'nodes'
+        when 'waitfor'
+        when 'show'
+          OptionParser.new do |opts|
+            opts.on('--failure-exit-code N', OptionParser::DecimalInteger) do |n|
+              command_options[:failure_exit_code] = n
+            end
+          end.order!
+        end
+
+        return options, command, command_options
+      end
+
+      def setup(options)
+        RRRSpec.application_type = :client
+        RRRSpec.config = ClientConfig.new
+        files = if options[:config].present?
+                  [options[:config]]
+                else
+                  ['.rrrspec', '.rrrspec-local', File.expand_path('~/.rrrspec')]
+                end
+        files.each do |path|
+          load(path) if File.exists?(path)
+        end
+      end
+
+      def nocommand(command)
       end
     end
   end

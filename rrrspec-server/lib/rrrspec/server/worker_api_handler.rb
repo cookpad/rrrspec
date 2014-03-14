@@ -52,7 +52,7 @@ module RRRSpec
       def assign_taskset(transport, taskset_ref, rsync_name, setup_command, slave_command, max_trials)
         return nil if @current_taskset.present?
 
-        worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec::Server.generate_worker_name, taskset_ref)
+        worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec.generate_worker_name, taskset_ref)
         logger = RPCLogger.new(transport, :append_worker_log_log, worker_log_ref)
 
         @current_taskset = taskset_ref
@@ -148,7 +148,7 @@ module RRRSpec
 
               exit_code = (status.to_i >> 8)
               slave_status = (exit_code == TIMEOUT_EXITCODE) ? 'timeout_exit' : 'failure_exit'
-              transport.send(:force_finish_slave, RRRSpec::Slave.generate_slave_name(uuid), slave_status)
+              transport.send(:force_finish_slave, RRRSpec.generate_slave_name(uuid), slave_status)
               trials += 1
               if trials > max_trials
                 @shutdown = true

@@ -1,6 +1,12 @@
-require 'socket'
 require 'logger'
-Time.zone_default = Time.find_zone('UTC')
+
+require 'active_support'
+require 'active_support/core_ext'
+require 'faye/websocket'
+require 'multi_json'
+require 'rack'
+
+require 'rrrspec/json_rpc_transport'
 
 module RRRSpec
   mattr_accessor :application_type
@@ -14,18 +20,20 @@ module RRRSpec
     end
   end
 
-
-  DEFAULT_CONFIG_FILES = [
-    File.expand_path('~/.rrrspec'),
-    '.rrrspec',
-    '.rrrspec-local'
-  ]
-
   def logger
     @logger ||= Logger.new(STDERR)
   end
 
   def logger=(logger)
     @logger = logger
+  end
+
+  def generate_worker_name
+    Socket.gethostname
+  end
+
+  def generate_slave_name(uuid=nil)
+    uuid ||= ENV['RRRSPEC_SLAVE_UUID']
+    "#{generate_worker_name}:#{uuid}"
   end
 end

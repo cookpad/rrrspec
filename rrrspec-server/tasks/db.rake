@@ -1,5 +1,8 @@
-require "active_support/core_ext/string"
+require "fileutils"
+
+require "active_support/core_ext"
 require "active_record"
+
 require "rrrspec/server"
 
 RRRSpec::Server::MIGRATIONS_DIR = File.expand_path('../../db/migrate', __FILE__)
@@ -7,23 +10,29 @@ RRRSpec::Server::MIGRATIONS_DIR = File.expand_path('../../db/migrate', __FILE__)
 namespace :rrrspec do
   namespace :server do
     task :server_config do
-      RRRSpec.setup(RRRSpec::Server::ServerConfiguration.new, [])
-      ActiveRecord::Base.establish_connection(**RRRSpec.configuration.persistence_db)
+      if File.exists?('config/database.yml')
+        require "yaml"
+        require "erb"
+        env = ENV["RACK_ENV"] ? ENV["RACK_ENV"] : "development"
+        ActiveRecord::Base.configurations = YAML.load(ERB.new(IO.read('config/database.yml')).result)
+        ActiveRecord::Base.establish_connection(env)
+      end
       ActiveRecord::Migrator.migrations_paths = [RRRSpec::Server::MIGRATIONS_DIR]
     end
 
     namespace :db do
       task :create => 'rrrspec:server:server_config' do
-        config = RRRSpec.configuration.persistence_db
+        env = ENV["RACK_ENV"] ? ENV["RACK_ENV"] : "development"
+        config = ActiveRecord::Base.configurations[env]
 
-        if config[:adapter] =~ /sqlite/
-          if File.exist?(config[:database])
-            $stderr.puts "#{config[:database]} already exists"
+        if config['adapter'] =~ /sqlite/
+          if File.exist?(config['database'])
+            $stderr.puts "#{config['database']} already exists"
           else
             ActiveRecord::Base.connection
           end
-        elsif config[:adapter] =~ /mysql/
-          ActiveRecord::Base.connection.create_database(config[:database])
+        elsif config['adapter'] =~ /mysql/
+          ActiveRecord::Base.connection.create_database(config['database'])
         else
           fail 'unknown database adapter'
         end
@@ -52,7 +61,8 @@ namespace :rrrspec do
 
       namespace :schema do
         task :dump => 'rrrspec:server:server_config' do
-          File.open(File.expand_path('../../db/schema.rb', __FILE__), "w:utf-8") do |file|
+          FileUtils.mkdir_p 'db'
+          File.open('db/schema.rb', "w:utf-8") do |file|
             ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection, file)
           end
         end

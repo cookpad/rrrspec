@@ -1,8 +1,5 @@
-require 'rspec'
-require 'rspec/core/formatters/base_text_formatter'
-
 module RRRSpec
-  module Client
+  module Slave
     class RSpecRunner
       def initialize
         @options = RSpec::Core::ConfigurationOptions.new([])

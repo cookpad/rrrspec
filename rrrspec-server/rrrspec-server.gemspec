@@ -30,14 +30,18 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "timecop"
   spec.add_development_dependency "rack-test"
+  spec.add_dependency "activemodel"
   spec.add_dependency "activerecord", "~> 4.0.2"
   spec.add_dependency "activesupport"
   spec.add_dependency "bundler"
-  spec.add_dependency "daemons"
+  spec.add_dependency "eventmachine"
   spec.add_dependency "faye-websocket"
   spec.add_dependency "multi_json"
   spec.add_dependency "rack"
   spec.add_dependency "redis"
   spec.add_dependency "rrrspec-client"
+
   spec.add_dependency "thin"
+
+  spec.add_dependency "tzinfo"
 end

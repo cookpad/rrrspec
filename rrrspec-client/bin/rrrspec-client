@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 
-require 'rrrspec/client/cli'
-RRRSpec::Client::CLI.start
+require 'rrrspec/client'
+RRRSpec::Client::CLI.run

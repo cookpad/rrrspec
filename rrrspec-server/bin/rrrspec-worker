@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
-require 'daemons'
-require 'eventmachine'
 require 'optparse'
-require 'rrrspec/server/applications'
+
+require 'eventmachine'
+
+require 'rrrspec/server'
 
 options = {}
 OptionParser.new do |opts|
@@ -29,10 +30,27 @@ OptionParser.new do |opts|
   opts.on("--slave-processes NUM", OptionParser::DecimalInteger) do |num|
     options[:slave_processes] = num
   end
+
+  opts.on("--[no-]daemonize") do |v|
+    options[:daemonize] = v
+  end
+
+  opts.on("--pidfile PATH") do |path|
+    options[:pidfile] = path
+  end
+
+  opts.on("--[no-]monitor") do |v|
+    options[:monitor] = v
+  end
+
+  opts.on("--help") do
+    puts opts
+    exit
+  end
 end.parse!
 
 app = RRRSpec::Server.worker_app(options)
 
-Daemons.run_proc('rrrspec-worker') do
+RRRSpec::Server.daemonizer('rrrspec-worker') do
   EM.run { app.run }
 end

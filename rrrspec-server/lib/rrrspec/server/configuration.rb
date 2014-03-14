@@ -1,9 +1,13 @@
 module RRRSpec
   module Server
     MasterConfig = Struct.new(
+      :port,
       :redis,
       :execute_log_text_path,
       :json_cache_path,
+      :daemonize,
+      :pidfile,
+      :monitor,
     )
 
     WorkerConfig = Struct.new(
@@ -13,6 +17,9 @@ module RRRSpec
       :working_dir,
       :worker_type,
       :slave_processes,
+      :daemonize,
+      :pidfile,
+      :monitor,
     )
   end
 end

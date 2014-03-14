@@ -1,10 +1,12 @@
 #!/usr/bin/env ruby
-require 'daemons'
-require 'eventmachine'
 require 'optparse'
+
+require 'eventmachine'
+require 'faye/websocket'
 require 'rack'
 require 'thin'
-require 'rrrspec/server/applications'
+
+require 'rrrspec/server'
 
 Faye::WebSocket.load_adapter('thin')
 
@@ -21,13 +23,34 @@ OptionParser.new do |opts|
   opts.on("--json-cache-path PATH") do |path|
     options[:json_cache_path] = File.absolute_path(path)
   end
+
+  opts.on("--port PORT", OptionParser::DecimalInteger) do |port|
+    options[:port] = port
+  end
+
+  opts.on("--[no-]daemonize") do |v|
+    options[:daemonize] = v
+  end
+
+  opts.on("--pidfile PATH") do |path|
+    options[:pidfile] = path
+  end
+
+  opts.on("--[no-]monitor") do |v|
+    options[:monitor] = v
+  end
+
+  opts.on("--help") do
+    puts opts
+    exit
+  end
 end.parse!
 
 app = RRRSpec::Server.master_app(options)
 
-Daemons.run_proc('rrrspec-master') do
+RRRSpec::Server.daemonizer('rrrspec-master') do
   EM.run do
     thin = Rack::Handler.get('thin')
-    thin.run(app)
+    thin.run(app, Port: RRRSpec.config.port)
   end
 end

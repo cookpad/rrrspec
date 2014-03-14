@@ -40,6 +40,7 @@ dequeue_task : TasksetRef -> Maybe (TaskRef, SpecPath, HardTimeoutSec, SoftTimeo
 try_finish_taskset : TasksetRef -> ()
 fail_taskset : TasksetRef -> ()
 cancel_taskset : TasksetRef -> ()
+cancel_user_taskset : RSyncName -> ()
 query_taskset_status : TasksetRef -> TasksetStatus
 
 ## Task
@@ -92,5 +93,5 @@ slave_updated : Timestamp -> SlaveRef -> Hash -> ()
 
 # GlobalNotification
 
-taskset_craeted : Timestamp -> TasksetRef -> CreatedAt -> RSyncName -> WorkerType -> TasksetClass -> ()
+taskset_created : Timestamp -> TasksetRef -> CreatedAt -> RSyncName -> WorkerType -> TasksetClass -> ()
 taskset_updated : Timestamp -> TasksetRef -> Hash -> ()

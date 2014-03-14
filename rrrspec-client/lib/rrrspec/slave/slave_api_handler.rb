@@ -70,18 +70,6 @@ module RRRSpec
         # Do nothing
       end
 
-      def spec_timeout_sec(task)
-        if task.estimate_sec == nil
-          soft_timeout_sec = @unknown_spec_timeout_sec
-          hard_timeout_sec = @unknown_spec_timeout_sec + 30
-        else
-          estimate_sec = task.estimate_sec
-          soft_timeout_sec = estimate_sec * 2
-          hard_timeout_sec = estimate_sec * 3
-        end
-        return [soft_timeout_sec, @least_timeout_sec].max, [hard_timeout_sec, @least_timeout_sec].max
-      end
-
       def work(transport)
         task, err = transport.sync_call(:dequeue_task, @taskset_ref)
         if task.blank?

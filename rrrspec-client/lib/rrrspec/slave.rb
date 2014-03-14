@@ -1,7 +1,14 @@
+require 'fiber'
 require 'set'
-require 'extreme_timeout'
 require 'timeout'
-require 'socket'
+require 'stringio'
+
+require 'active_support/core_ext'
+require 'eventmachine'
+require 'extreme_timeout'
+require 'faye/websocket'
+require 'rspec'
+require 'rspec/core/formatters/base_text_formatter'
 
 require 'rrrspec'
 require 'rrrspec/slave/slave_api_handler'
@@ -32,11 +39,6 @@ module RRRSpec
         [:taskset, ENV['RRRSPEC_TAKSET_ID'].to_i],
         ENV['RRRSPEC_WORKING_PATH'],
       )
-    end
-
-    def self.generate_slave_name(uuid=nil)
-      uuid ||= ENV['RRRSPEC_SLAVE_UUID']
-      "#{Socket.gethostname}:#{uuid}"
     end
   end
 end

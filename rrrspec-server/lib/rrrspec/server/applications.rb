@@ -6,15 +6,14 @@ module RRRSpec
       load('config/configuration.rb') if File.exists?('config/configuration.rb')
       options.each { |key, value| RRRSpec.config[key] = value }
 
-      ActiveRecord::Base.configuration ||=
-        begin
-          if File.exists?('config/database.yml')
-            require "erb"
-            YAML.load(ERB.new(IO.read(yaml)).result)
-          end
-        end
-      ActiveRecord::Base.establish_connection
-
+      if File.exists?('config/database.yml')
+        require "yaml"
+        require "erb"
+        env = ENV["RACK_ENV"] ? ENV["RACK_ENV"] : "development"
+        ActiveRecord::Base.establish_connection(
+          YAML.load(ERB.new(IO.read('config/database.yml')).result)[env]
+        )
+      end
       WebSocketSplitter.new(MasterAPIHandler.new)
     end
 

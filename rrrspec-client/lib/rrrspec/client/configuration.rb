@@ -1,6 +1,7 @@
 module RRRSpec
   module Client
     ClientConfig = Struct.new(
+      :master_url,
       :packaging_dir,
       :rsync_remote_path,
       :rsync_options,
