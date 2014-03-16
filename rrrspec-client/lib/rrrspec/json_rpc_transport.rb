@@ -1,6 +1,6 @@
 module RRRSpec
   class JSONRPCTransport
-    def initialize(handler, throw_exception=false)
+    def initialize(handler, throw_exception: false)
       @handler = handler
       @throw_exception = throw_exception
     end
@@ -19,6 +19,8 @@ module RRRSpec
         if @throw_exception || !request['id']
           raise
         else
+          RRRSpec.logger.fatal(e.message)
+          RRRSpec.logger.fatal(e.backtrace.join("\n"))
           MultiJson.dump({result: nil, error: e.message, id: request['id']})
         end
       end
@@ -26,25 +28,55 @@ module RRRSpec
   end
 
   class WebSocketTransport < JSONRPCTransport
-    def initialize(handler, ws, throw_exception=false)
-      super(handler, throw_exception)
-      @ws = ws
+    PING_INTERVAL_SEC = 15
+    RETRY_INTERVAL_SEC = 1
+
+    def initialize(handler, ws_or_url, throw_exception: false, auto_reconnect: false)
+      super(handler, throw_exception: throw_exception)
       @message_id = 0
       @waitings = Hash.new
+      @auto_reconnect = auto_reconnect
 
-      ws.on(:open) do |event|
-        @handler.open(self)
+      if ws_or_url.is_a?(String)
+        @url = ws_or_url
+        setup_websocket(Faye::WebSocket::Client.new(@url, nil, ping: PING_INTERVAL_SEC))
+      else
+        @url = nil
+        setup_websocket(ws_or_url)
+      end
+    end
+
+    def setup_websocket(ws)
+      @ws = ws
+
+      @ws.on(:open) do |event|
+        RRRSpec.logger.info("Connection opened: #{@ws}")
+        Fiber.new do
+          @handler.open(self)
+        end.resume
       end
 
-      ws.on(:message) do |event|
-        response = call_handler(MultiJson.load(event.data))
-        if response
-          ws.send(response)
+      @ws.on(:message) do |event|
+        Fiber.new do
+          RRRSpec.logger.info("Message:  #{event.data}")
+          response = call_handler(MultiJson.load(event.data))
+          RRRSpec.logger.info("Response: #{response}")
+          if response
+            @ws.send(response)
+          end
+        end.resume
+      end
+
+      @ws.on(:close) do |event|
+        RRRSpec.logger.info("Connection closed: #{@ws}")
+        if @url && @auto_reconnect
+          sleep RETRY_INTERVAL_SEC
+          setup_websocket(Faye::WebSocket::Client.new(@url, nil, ping: PING_INTERVAL_SEC))
+        else
+          Fiber.new do
+            @handler.close(self)
+          end.resume
         end
-      end
-
-      ws.on(:close) do |event|
-        @handler.close(self)
       end
     end
 
@@ -53,6 +85,7 @@ module RRRSpec
     end
 
     def close
+      @auto_reconnect = false
       @ws.close
     end
 
@@ -82,14 +115,14 @@ module RRRSpec
     def process_response(response)
       fiber = @waitings.delete(response['id'])
       if fiber
-        fiber.yield(response['result'], response['error'])
+        fiber.resume(response['result'], response['error'])
       end
     end
   end
 
   class HTTPPostTransport < JSONRPCTransport
-    def initialize(handler, env, throw_exception=false)
-      super(handler, throw_exception)
+    def initialize(handler, env, throw_exception: false)
+      super(handler, throw_exception: throw_exception)
       @request = Rack::Request.new(env)
     end
 

@@ -7,6 +7,7 @@ module RRRSpec
       end
 
       def open(transport)
+        send(@command, transport)
       end
 
       def close(transport)
@@ -14,28 +15,25 @@ module RRRSpec
       end
 
       def start(transport)
-        rsync_name = @options[:rsync_name] || RRRSpec.config.rsync_name || ENV['USER']
-        worker_type = @options[:worker_type] || RRRSpec.config.worker_type
+        builder = TasksetBuilder.new(transport, RRRSpec.config.unknown_spec_timeout_sec, RRRSpec.config.least_timeout_sec)
+        builder.rsync_name = @options[:rsync_name] || RRRSpec.config.rsync_name || ENV['USER']
+        builder.setup_command = RRRSpec.config.setup_command
+        builder.slave_command = RRRSpec.config.slave_command
+        builder.worker_type = @options[:worker_type] || RRRSpec.config.worker_type
+        builder.taskset_class = RRRSpec.config.taskset_class
+        builder.max_workers = RRRSpec.config.max_workers
+        builder.max_trials = RRRSpec.config.max_trials
+        builder.spec_files = RRRSpec.config.spec_files
 
-        taskset_ref = TasksetBuilder.build_and_start(
-          transport,
-          rsync_name,
-          RRRSpec.config.setup_command,
-          RRRSpec.config.slave_command,
-          worker_type,
-          RRRSpec.config.taskset_class,
-          RRRSpec.config.max_workers,
-          RRRSpec.config.max_trials,
-          RRRSpec.config.tasks
-        )
+        taskset_ref = builder.start
         puts taskset_ref[1]
         transport.close
       end
 
       def cancel(transport)
-        taskset_id = ARGV.shift
+        taskset_id = ARGV[0]
         if taskset_id
-          taskset_ref = [:taskset, taskset_id]
+          taskset_ref = [:taskset, taskset_id.to_i]
           transport.send(:cancel_taskset, taskset_ref)
           transport.close
         else
@@ -44,7 +42,7 @@ module RRRSpec
       end
 
       def cancelall(transport)
-        rsync_name = ARGV.shift
+        rsync_name = ARGV[0]
         if rsync_name
           transport.send(:cancel_user_taskset, rsync_name)
           transport.close
@@ -64,10 +62,10 @@ module RRRSpec
       end
 
       def waitfor(transport)
-        taskset_id = ARGV.shift
+        taskset_id = ARGV[0]
         if taskset_id
           @exit_if_taskset_finished = true
-          taskset_ref = [:taskset, taskset_id]
+          taskset_ref = [:taskset, taskset_id.to_i]
           transport.sync_call(:listen_to_taskset, taskset_ref)
           status = transport.sync_call(:query_taskset_status, taskset_ref)
           if ['cancelled', 'failed', 'succeeded'].include?(status)
@@ -84,8 +82,8 @@ module RRRSpec
       end
 
       def taskset_updated(transport, timestamp, taskset_ref, h)
-        if @exit_if_taskset_finished && h[:finished_at].present?
-          tranport.close
+        if @exit_if_taskset_finished && h['finished_at'].present?
+          transport.close
         end
       end
 
@@ -137,12 +135,11 @@ module RRRSpec
 
         if COMMANDS.include?(command)
           EM.run do
-            Fiber.new do
-              WebSocketTransport.new(
-                CLICommandHandler.new(command, command_options),
-                Faye::Websocket::Client.new(RRRSpec.config.master_url),
-              )
-            end.resume
+            WebSocketTransport.new(
+              CLIAPIHandler.new(command, command_options),
+              RRRSpec.config.master_url,
+              auto_reconnect: true,
+            )
           end
         else
           nocommand(command)

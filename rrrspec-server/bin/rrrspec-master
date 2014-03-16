@@ -40,7 +40,11 @@ OptionParser.new do |opts|
     options[:monitor] = v
   end
 
-  opts.on("--help") do
+  opts.on("--user USER") do |user|
+    options[:user] = user
+  end
+
+  opts.on("-h", "--help") do
     puts opts
     exit
   end
@@ -49,8 +53,6 @@ end.parse!
 app = RRRSpec::Server.master_app(options)
 
 RRRSpec::Server.daemonizer('rrrspec-master') do
-  EM.run do
-    thin = Rack::Handler.get('thin')
-    thin.run(app, Port: RRRSpec.config.port)
-  end
+  thin = Rack::Handler.get('thin')
+  thin.run(app, Port: RRRSpec.config.port)
 end

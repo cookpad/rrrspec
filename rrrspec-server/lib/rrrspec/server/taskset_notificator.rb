@@ -76,30 +76,28 @@ module RRRSpec
       include TasksetEventReceptor
 
       def initialize
-        @ws_to_taskset = Hash.new { |h,k| h[k] = Set.new }
-        @taskset_to_ws = Hash.new { |h,k| h[k] = Set.new }
+        @transport_to_taskset = Hash.new { |h,k| h[k] = Set.new }
+        @taskset_to_transport = Hash.new { |h,k| h[k] = Set.new }
       end
 
-      def listen(ws, taskset_ref)
-        @ws_to_taskset[ws].add(taskset_ref)
-        @taskset_to_ws[taskset_ref].add(ws)
+      def listen(transport, taskset_ref)
+        @transport_to_taskset[transport].add(taskset_ref)
+        @taskset_to_transport[taskset_ref].add(transport)
       end
 
-      def close(ws)
-        @ws_to_taskset[ws].each do |taskset_ref|
-          @taskset_to_ws[taskset_ref].delete(ws)
+      def close(transport)
+        @transport_to_taskset[transport].each do |taskset_ref|
+          @taskset_to_transport[taskset_ref].delete(transport)
         end
-        @ws_to_taskset.delete(ws)
+        @transport_to_taskset.delete(transport)
       end
 
       private
 
       def send_notification(taskset_ref, object, method, *params)
         params = [object.updated_at, object.to_ref] + params
-        @taskset_to_ws[taskset_ref].each do |ws|
-          ws.send(MultiJson.dump({
-            method: method, params: params, id: nil,
-          }))
+        @taskset_to_transport[taskset_ref].each do |transport|
+          transport.send(method, *params)
         end
       end
     end
@@ -127,25 +125,23 @@ module RRRSpec
       include GlobalEventReceptor
 
       def initialize
-        @wsockets = Set.new
+        @transports = Set.new
       end
 
-      def listen(ws)
-        @wsockets.add(ws)
+      def listen(transport)
+        @transports.add(transport)
       end
 
-      def close(ws)
-        @wsockets.delete(ws)
+      def close(transport)
+        @transports.delete(transport)
       end
 
       private
 
       def send_notification(object, method, *params)
         params = [object.updated_at, object.to_ref] + params
-        @wsockets.each do |ws|
-          ws.send(MultiJson.dump({
-            method: method, params: params, id: nil,
-          }))
+        @transports.each do |transport|
+          transport.send(method, *params)
         end
       end
     end

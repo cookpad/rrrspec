@@ -31,7 +31,7 @@ listen_to_taskset : TasksetRef -> ()
 
 ## SpecAverageSec
 
-query_spec_average_sec : SpecSHA1 -> AverageSec
+query_spec_average_sec : TasksetClass -> SpecSHA1 -> AverageSec
 
 ## Taskset
 

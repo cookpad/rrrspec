@@ -44,7 +44,7 @@ module RRRSpec
       def trial; Trial.first; end
       let(:trial_ref) { trial.to_ref }
 
-      describe TasksetQuery do
+      describe MasterAPIHandler::TasksetQuery do
         describe '#create_taskset' do
           it 'creates a taskset' do
             taskset_ref = call_create_taskset
@@ -141,7 +141,7 @@ module RRRSpec
         end
       end
 
-      describe TaskQuery do
+      describe MasterAPIHandler::TaskQuery do
         before { call_create_taskset }
 
         describe '#reversed_enqueue_task' do
@@ -156,7 +156,7 @@ module RRRSpec
         end
       end
 
-      describe TrialQuery do
+      describe MasterAPIHandler::TrialQuery do
         before { call_create_taskset }
         before { Slave.create(name: 'test_slave_name', taskset_id: taskset.id) }
 
@@ -196,14 +196,14 @@ module RRRSpec
         end
       end
 
-      describe WorkerQuery do
+      describe MasterAPIHandler::WorkerQuery do
         before { call_create_taskset }
 
         describe '#current_taskset' do
         end
       end
 
-      describe WorkerLogQuery do
+      describe MasterAPIHandler::WorkerLogQuery do
         before { call_create_taskset }
 
         describe '#create_worker_log' do
@@ -222,7 +222,7 @@ module RRRSpec
         end
       end
 
-      describe SlaveQuery do
+      describe MasterAPIHandler::SlaveQuery do
         before { call_create_taskset }
 
         describe '#create_slave' do

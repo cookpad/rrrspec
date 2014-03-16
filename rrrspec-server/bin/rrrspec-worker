@@ -43,6 +43,10 @@ OptionParser.new do |opts|
     options[:monitor] = v
   end
 
+  opts.on("--user USER") do |user|
+    options[:user] = user
+  end
+
   opts.on("--help") do
     puts opts
     exit

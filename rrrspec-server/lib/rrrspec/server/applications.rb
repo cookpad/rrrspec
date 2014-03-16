@@ -23,12 +23,7 @@ module RRRSpec
       end
 
       def run
-        Fiber.new do
-          WebSocketTransport.new(
-            @handler,
-            Faye::Websocket::Client.new(RRRSpec.config.master_url),
-          )
-        end.resume
+        WebSocketTransport.new(@handler, RRRSpec.config.master_url, auto_reconnect: true)
       end
     end
 

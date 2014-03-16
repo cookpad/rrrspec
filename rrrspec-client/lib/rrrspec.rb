@@ -1,4 +1,5 @@
 require 'logger'
+require 'fiber'
 
 require 'active_support'
 require 'active_support/core_ext'
@@ -7,6 +8,8 @@ require 'multi_json'
 require 'rack'
 
 require 'rrrspec/json_rpc_transport'
+
+Time.zone_default = Time.find_zone('UTC')
 
 module RRRSpec
   mattr_accessor :application_type

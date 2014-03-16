@@ -6,19 +6,19 @@ module RRRSpec
       module ClassMethods
         def from_ref(ref)
           label, i = ref
-          raise ArgumentError unless label == self.name.to_s
+          raise ArgumentError unless label == self.name.split('::')[-1].downcase
           find_by_id(i)
         end
       end
 
       def to_ref
-        [self.class.name.to_s, id]
+        [self.class.name.split('::')[-1].downcase, id]
       end
     end
 
     class TaskQueue
       def initialize(taskset_id)
-        @key = ['rrrspec', 'Taskset', taskset_id.to_s, 'queue'].join(':')
+        @key = ['rrrspec', 'taskset', taskset_id.to_s, 'queue'].join(':')
       end
 
       def enqueue(task)
@@ -112,10 +112,41 @@ module RRRSpec
     end
 
     class Task < ActiveRecord::Base
+      ONE_DAY_SEC = 24 * 60 * 60
+      AVERAGE_ROW_LIMIT = 100
+
       include JSONConstructor::TaskJSONConstructor
       include TypeIDReferable
       belongs_to :taskset
       has_many :trials
+
+      def self.calc_average(taskset_class, spec_sha1)
+        times = Trial.joins(task: [:taskset]).where(
+          status: ['passed', 'pending'],
+          tasks: {spec_sha1: spec_sha1},
+          tasksets: {taskset_class: taskset_class},
+        ).order(created_at: :desc).limit(AVERAGE_ROW_LIMIT).pluck(:started_at, :finished_at)
+        durations = times.map do |started_at, finished_at|
+          finished_at - started_at
+        end
+        if durations.empty?
+          nil
+        else
+          (durations.sum / durations.size).to_i
+        end
+      end
+
+      def self.average(taskset_class, spec_sha1)
+        cache_key = ['rrrspec', 'average', taskset_class, spec_sha1].join(':')
+        avg = RRRSpec.redis.get(cache_key)
+        if avg
+          avg.to_i
+        else
+          avg = calc_average(taskset_class, spec_sha1)
+          RRRSpec.redis.setex(cache_key, ONE_DAY_SEC, avg.to_s)
+          avg
+        end
+      end
 
       def enqueue
         TaskQueue.new(taskset_id).enqueue(self)

@@ -1,5 +1,5 @@
 module RRRSpec
-  module Sever
+  module Server
     RESPAWN_INTERVAL_LIMIT_SEC = 30
 
     def self.daemonizer(process_name, &block)
@@ -13,10 +13,8 @@ module RRRSpec
       File.umask(0)
       setup_signal_handlers
       setup_atexit_handlers
-
-      if should_monitor?
-        monitor_fork(&block)
-      else
+      monitor_fork do
+        Process::Sys.setuid(RRRSpec.config.user) if RRRSpec.config.user
         block.call
       end
     end
@@ -73,13 +71,12 @@ module RRRSpec
       end
     end
 
-    def self.monitor_fork
+    def self.monitor_fork(&block)
       loop do
         started_at = Time.now
-        pid = Process.fork do
-          block.call
-        end
+        pid = Process.fork(&block)
         Process.waitpid(pid)
+        break unless should_monitor?
         if Time.now - started_at < RESPAWN_INTERVAL_LIMIT_SEC
           sleep RESPAWN_INTERVAL_LIMIT_SEC
         end

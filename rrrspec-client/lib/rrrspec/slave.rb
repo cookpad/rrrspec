@@ -6,7 +6,6 @@ require 'stringio'
 require 'active_support/core_ext'
 require 'eventmachine'
 require 'extreme_timeout'
-require 'faye/websocket'
 require 'rspec'
 require 'rspec/core/formatters/base_text_formatter'
 
@@ -23,12 +22,7 @@ module RRRSpec
       end
 
       def run
-        Fiber.new do
-          WebSocketTransport.new(
-            @handler,
-            Faye::Websocket::Client.new(@master_url),
-          )
-        end.resume
+        WebSocketTransport.new(@handler, @master_url, auto_reconnect: true)
       end
     end
 

@@ -14,7 +14,6 @@ require 'active_support/time'
 require 'bundler'
 require 'eventmachine'
 require 'faye/websocket'
-require 'multi_json'
 require 'redis'
 
 ActiveSupport::Inflector::Inflections.instance.singular('Slaves', 'Slave')
@@ -51,7 +50,7 @@ module RRRSpec
       # It is probable that if two other threads shares one redis connection
       # one thread blocks the other thread. We avoid this by using separate
       # connections.
-      Thread.current[:redis] ||= Redis.new(config.redis)
+      Thread.current[:redis] ||= Redis.new(RRRSpec.config.redis)
     end
 
     def redis=(redis)

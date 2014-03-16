@@ -8,6 +8,7 @@ module RRRSpec
       :daemonize,
       :pidfile,
       :monitor,
+      :user,
     )
 
     WorkerConfig = Struct.new(
@@ -20,6 +21,7 @@ module RRRSpec
       :daemonize,
       :pidfile,
       :monitor,
+      :user,
     )
   end
 end

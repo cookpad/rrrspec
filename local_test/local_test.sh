@@ -6,12 +6,12 @@ exec 2>&1 1> >(tee tmp/test.log)
 function before_exit() {
   echo "Shutdown"
 
-  kill -TERM `jobs -p %?"rrrspec-master"`
-  kill -TERM `jobs -p %?"rrrspec-worker"`
-  wait %?"rrrspec-server server"
-  wait %?"rrrspec-server worker"
+  kill -9 `jobs -p %?"rrrspec-master"` || true
+  kill -9 `jobs -p %?"rrrspec-worker"` || true
+  wait %?"rrrspec-master"
+  wait %?"rrrspec-worker"
 
-  kill -9 `jobs -p %?"redis-server"`
+  kill -9 `jobs -p %?"redis-server"` || true
   wait
 }
 
@@ -31,10 +31,10 @@ bundle install --path vendor/bundler
 bundle exec rake -t rrrspec:server:db:create rrrspec:server:db:migrate
 redis-server --port 9998 --save '' >/dev/null 2>&1 &
 
-bundle exec rrrspec-master
-bundle exec rrrspec-worker
+bundle exec rrrspec-master --no-daemonize &
+bundle exec rrrspec-worker --no-daemonize &
 
 TASK_KEY=$(bundle exec rrrspec-client --config dot_rrrspec.rb start --key-only)
 echo TASK_KEY=$TASK_KEY
-bundle exec rrrspec-client waitfor $TASK_KEY $RRRSPEC_CLIENTS_OPTIONS --pollsec=10
-bundle exec rrrspec-client show $TASK_KEY $RRRSPEC_CLIENTS_OPTIONS --verbose --failure-exit-code=0
+bundle exec rrrspec-client --config dot_rrrspec.rb waitfor $TASK_KEY
+bundle exec rrrspec-client --config dot_rrrspec.rb show $TASK_KEY --failure-exit-code=0

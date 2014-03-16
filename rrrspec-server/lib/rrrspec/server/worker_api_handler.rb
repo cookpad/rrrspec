@@ -40,13 +40,15 @@ module RRRSpec
       end
 
       def open(transport)
-        update_current_taskset
-        @timer = EM.add_periodic_timer(HEARTBEAT_SEC) { update_current_taskset }
+        update_current_taskset(transport)
+        @timer = EM.add_periodic_timer(HEARTBEAT_SEC) { update_current_taskset(transport) }
       end
 
       def close(transport)
-        @timer.cancel
-        @timer = nil
+        if @timer
+          @timer.cancel
+          @timer = nil
+        end
       end
 
       def assign_taskset(transport, taskset_ref, rsync_name, setup_command, slave_command, max_trials)
@@ -56,7 +58,7 @@ module RRRSpec
         logger = RPCLogger.new(transport, :append_worker_log_log, worker_log_ref)
 
         @current_taskset = taskset_ref
-        update_current_taskset
+        update_current_taskset(transport)
 
         working_path = File.join(RRRSpec.config.working_dir, rsync_name)
 
@@ -85,7 +87,7 @@ module RRRSpec
       ensure
         @shutdown = false
         @current_taskset = nil
-        update_current_taskset
+        update_current_taskset(transport)
 
         transport.send(:finish_worker_log, worker_log_ref) if worker_log_ref
       end
@@ -97,7 +99,7 @@ module RRRSpec
 
       private
 
-      def update_current_taskset
+      def update_current_taskset(transport)
         transport.send(:current_taskset,
                        RRRSpec.generate_worker_name,
                        RRRSpec.config.worker_type,

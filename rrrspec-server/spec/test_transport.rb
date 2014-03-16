@@ -18,7 +18,7 @@ end
 module TestTransportHelper
   def master_transport
     @master_transport ||= TestTransport.new(
-      RRRSpec::Server::WebSocketSplitter.new(RRRSpec::Server::MasterAPIHandler.new, true)
+      RRRSpec::Server::WebSocketSplitter.new(RRRSpec::Server::MasterAPIHandler.new, throw_exception: true)
     )
   end
 end

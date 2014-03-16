@@ -2,19 +2,19 @@ module RRRSpec
   module Server
     class MasterAPIHandler
       module NotificatorQuery
-        def listen_to_global(ws)
-          @global_notificator.listen(ws)
+        def listen_to_global(transport)
+          @global_notificator.listen(transport)
           nil
         end
 
-        def listen_to_taskset(ws, taskset_ref)
-          @taskset_notificator.listen(ws, taskset)
+        def listen_to_taskset(transport, taskset_ref)
+          @taskset_notificator.listen(transport, taskset_ref)
           nil
         end
 
-        def close(ws)
-          @taskset_notificator.close(ws)
-          @global_notificator.close(ws)
+        def close(transport)
+          @taskset_notificator.close(transport)
+          @global_notificator.close(transport)
           nil
         end
 
@@ -38,13 +38,13 @@ module RRRSpec
       end
 
       module SpecAverageSecQuery
-        def query_spec_average_sec(ws, spec_sha1)
-          # TODO
+        def query_spec_average_sec(transport, taskset_class, spec_sha1)
+          Task.average(taskset_class, spec_sha1)
         end
       end
 
       module TasksetQuery
-        def create_taskset(ws, rsync_name, setup_command, slave_command, worker_type, taskset_class, max_workers, max_trials, tasks)
+        def create_taskset(transport, rsync_name, setup_command, slave_command, worker_type, taskset_class, max_workers, max_trials, tasks)
           taskset = Taskset.create(
             rsync_name: rsync_name,
             setup_command: setup_command,
@@ -70,7 +70,7 @@ module RRRSpec
           taskset.to_ref
         end
 
-        def dequeue_task(ws, taskset_ref)
+        def dequeue_task(transport, taskset_ref)
           loop do
             task = TaskQueue.new(taskset_ref[1]).dequeue
             if task
@@ -84,56 +84,56 @@ module RRRSpec
           nil
         end
 
-        def try_finish_taskset(ws, taskset_ref)
+        def try_finish_taskset(transport, taskset_ref)
           Taskset.from_ref(taskset_ref).try_finish
           nil
         end
 
-        def fail_taskset(ws, taskset_ref)
+        def fail_taskset(transport, taskset_ref)
           Taskset.from_ref(taskset_ref).fail
           nil
         end
 
-        def cancel_taskset(ws, taskset_ref)
+        def cancel_taskset(transport, taskset_ref)
           Taskset.from_ref(taskset_ref).cancel
           nil
         end
 
-        def cancel_user_taskset(ws, rsync_name)
+        def cancel_user_taskset(transport, rsync_name)
           # TODO
           nil
         end
 
-        def query_taskset_status(ws, taskset_ref)
+        def query_taskset_status(transport, taskset_ref)
           Taskset.from_ref(taskset_ref).status
         end
       end
 
       module TaskQuery
-        def reversed_enqueue_task(ws, task_ref)
+        def reversed_enqueue_task(transport, task_ref)
           Task.from_ref(task_ref).reversed_enqueue
           nil
         end
       end
 
       module TrialQuery
-        def create_trial(ws, task_ref, slave_ref)
+        def create_trial(transport, task_ref, slave_ref)
           Task.from_ref(task_ref).trials.create(slave_id: slave_ref[1]).to_ref
         end
 
-        def start_trial(ws, trial_ref)
+        def start_trial(transport, trial_ref)
           Trial.from_ref(trial_ref).update_attributes(started_at: Time.zone.now)
           nil
         end
 
-        def finish_trial(ws, trial_ref, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+        def finish_trial(transport, trial_ref, trial_status, stdout, stderr, passed_count, pending_count, failed_count)
           Trial.from_ref(trial_ref).finish(trial_status, stdout, stderr, passed_count, pending_count, failed_count)
           nil
         end
       end
 
       module WorkerQuery
-        def current_taskset(ws, worker_name, worker_type, taskset_ref)
+        def current_taskset(transport, worker_name, worker_type, taskset_ref)
           Worker.with_name(worker_name).current_taskset_ref = taskset_ref
           Taskset.dispatch unless taskset_ref
           nil
@@ -141,46 +141,46 @@ module RRRSpec
       end
 
       module WorkerLogQuery
-        def create_worker_log(ws, worker_name, taskset_ref)
+        def create_worker_log(transport, worker_name, taskset_ref)
           WorkerLog.create(worker_name: worker_name, taskset_id: taskset_ref[1]).to_ref
         end
 
-        def append_worker_log_log(ws, worker_log_ref, log)
+        def append_worker_log_log(transport, worker_log_ref, log)
           WorkerLog.from_ref(worker_log_ref).log.append(log)
           nil
         end
 
-        def set_rsync_finished_time(ws, worker_log_ref)
+        def set_rsync_finished_time(transport, worker_log_ref)
           WorkerLog.from_ref(worker_log_ref).finish_rsync
           nil
         end
 
-        def set_setup_finished_time(ws, worker_log_ref)
+        def set_setup_finished_time(transport, worker_log_ref)
           WorkerLog.from_ref(worker_log_ref).finish_setup
           nil
         end
 
-        def set_rspec_finished_time(ws, worker_log_ref)
+        def set_rspec_finished_time(transport, worker_log_ref)
           WorkerLog.from_ref(worker_log_ref).finish_rspec
           nil
         end
       end
 
       module SlaveQuery
-        def create_slave(ws, slave_name, taskset_ref)
+        def create_slave(transport, slave_name, taskset_ref)
           Slave.create(name: slave_name, taskset_id: taskset_ref[1]).to_ref
         end
 
-        def current_trial(ws, slave_ref, trial_ref)
+        def current_trial(transport, slave_ref, trial_ref)
           # TODO
         end
 
-        def finish_slave(ws, slave_ref, status)
+        def finish_slave(transport, slave_ref, status)
           Slave.from_ref(slave_ref).finish(status)
           nil
         end
 
-        def force_finish_slave(ws, slave_name, status)
+        def force_finish_slave(transport, slave_name, status)
           # TODO
         end
       end
@@ -193,6 +193,9 @@ module RRRSpec
       include WorkerQuery
       include WorkerLogQuery
       include SlaveQuery
+
+      def open(transport)
+      end
 
       def initialize
         initialize_notificator
