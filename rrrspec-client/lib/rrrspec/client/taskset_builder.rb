@@ -33,8 +33,9 @@ module RRRSpec
 
       def build_task_argument
         spec_files.map do |spec_path|
-          raise "Spec file not found: #{spec_path}" unless File.exists?(spec_path)
-          spec_sha1 = Digest::SHA1.hexdigest(File.read(spec_path, mode: 'rb'))
+          filepath = File.join(RRRSpec.config.packaging_dir, spec_path)
+          raise "Spec file not found: #{spec_path}" unless File.exists?(filepath)
+          spec_sha1 = Digest::SHA1.hexdigest(File.read(filepath, mode: 'rb'))
           average_sec = @transport.sync_call(:query_spec_average_sec, taskset_class, spec_sha1)
           if average_sec == nil
             average_sec = @unknown_spec_timeout_sec

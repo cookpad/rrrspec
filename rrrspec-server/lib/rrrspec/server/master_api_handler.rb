@@ -45,6 +45,7 @@ module RRRSpec
 
       module TasksetQuery
         def create_taskset(transport, rsync_name, setup_command, slave_command, worker_type, taskset_class, max_workers, max_trials, tasks)
+          raise "the user is running a taskset" if Taskset.is_running?(rsync_name)
           taskset = Taskset.create(
             rsync_name: rsync_name,
             setup_command: setup_command,

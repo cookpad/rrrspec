@@ -180,6 +180,7 @@ module RRRSpec
 
         describe '#finish_trial' do
           let(:trial_ref) { master_transport.sync_call(:create_trial, task_ref, slave_ref) }
+          before { master_transport.sync_call(:start_trial, trial_ref) }
 
           it 'finishes a trial' do
             master_transport.sync_call(:finish_trial, trial_ref, 'pending', 'test_stdout', 'test_stderr', 3, 4, 0)

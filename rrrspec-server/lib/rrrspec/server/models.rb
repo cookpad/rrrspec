@@ -60,6 +60,14 @@ module RRRSpec
         # TODO
       end
 
+      def self.running
+        where(status: [nil, 'running'])
+      end
+
+      def self.is_running?(rsync_name)
+        !running.where(rsync_name: rsync_name).empty?
+      end
+
       def self.full
         includes(
           :tasks => [{:trials => [:task, :slave]}, :taskset],
@@ -136,15 +144,24 @@ module RRRSpec
         end
       end
 
+      def self.average_cache_key(taskset_class, spec_sha1)
+        ['rrrspec', 'average', taskset_class, spec_sha1].join(':')
+      end
+
+      def self.update_average(taskset_class, spec_sha1)
+        avg = calc_average(taskset_class, spec_sha1)
+        if avg
+          RRRSpec::Server.redis.setex(average_cache_key(taskset_class, spec_sha1), ONE_DAY_SEC, avg.to_s)
+        end
+        avg
+      end
+
       def self.average(taskset_class, spec_sha1)
-        cache_key = ['rrrspec', 'average', taskset_class, spec_sha1].join(':')
-        avg = RRRSpec.redis.get(cache_key)
+        avg = RRRSpec::Server.redis.get(average_cache_key(taskset_class, spec_sha1))
         if avg
           avg.to_i
         else
-          avg = calc_average(taskset_class, spec_sha1)
-          RRRSpec.redis.setex(cache_key, ONE_DAY_SEC, avg.to_s)
-          avg
+          Task.update_average(taskset_class, spec_sha1)
         end
       end
 
@@ -163,9 +180,11 @@ module RRRSpec
         case
         when statuses.include?('passed')
           update_attributes(status: 'passed')
+          Task.update_average(taskset.taskset_class, spec_sha1)
           true
         when statuses.include?('pending')
           update_attributes(status: 'pending')
+          Task.update_average(taskset.taskset_class, spec_sha1)
           true
         when statuses.include?(nil)
           false
