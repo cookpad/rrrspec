@@ -3,7 +3,6 @@ require 'optparse'
 
 require 'eventmachine'
 require 'faye/websocket'
-require 'rack'
 require 'thin'
 
 require 'rrrspec/server'
@@ -52,7 +51,20 @@ end.parse!
 
 app = RRRSpec::Server.master_app(options)
 
+
 RRRSpec::Server.daemonizer('rrrspec-master') do
-  thin = Rack::Handler.get('thin')
-  thin.run(app, Port: RRRSpec.config.port)
+  RRRSpec::Server.master_after_fork_initialize
+  server = Thin::Server.new('0.0.0.0', RRRSpec.config.port || 8080, app)
+  server.start
+
+  finish_detector = proc do
+    unless server.running?
+      EM.stop
+    else
+      EM.next_tick { finish_detector.call }
+    end
+  end
+  finish_detector.call
+
+  EM.reactor_thread.join
 end

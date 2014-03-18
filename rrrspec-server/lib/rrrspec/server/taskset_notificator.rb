@@ -73,11 +73,13 @@ module RRRSpec
     end
 
     class TasksetNotificator
+      include Singleton
       include TasksetEventReceptor
 
       def initialize
         @transport_to_taskset = Hash.new { |h,k| h[k] = Set.new }
         @taskset_to_transport = Hash.new { |h,k| h[k] = Set.new }
+        @redis = nil
       end
 
       def listen(transport, taskset_ref)
@@ -92,13 +94,23 @@ module RRRSpec
         @transport_to_taskset.delete(transport)
       end
 
+      def register_pubsub(pubsub_redis)
+        pubsub_redis.pubsub.subscribe("rrrspec:taskset_notification") do |m|
+         taskset_ref, message  = Marshal.load(m)
+         @taskset_to_transport[taskset_ref].each do |transport|
+           transport.direct_send(message)
+         end
+        end
+      end
+
       private
 
       def send_notification(taskset_ref, object, method, *params)
         params = [object.updated_at, object.to_ref] + params
-        @taskset_to_transport[taskset_ref].each do |transport|
-          transport.send(method, *params)
-        end
+        RRRSpec::Server.redis.publish(
+          'rrrspec:taskset_notification',
+          Marshal.dump([taskset_ref, JSONRPCTransport.compose_message(method, params, nil)]),
+        )
       end
     end
 
@@ -122,6 +134,7 @@ module RRRSpec
     end
 
     class GlobalNotificator
+      include Singleton
       include GlobalEventReceptor
 
       def initialize
@@ -136,13 +149,23 @@ module RRRSpec
         @transports.delete(transport)
       end
 
+      def register_pubsub(pubsub_redis)
+        pubsub_redis.pubsub.subscribe("rrrspec:global_notification") do |m|
+         message  = Marshal.load(m)
+         @transports.each do |transport|
+           transport.direct_send(message)
+         end
+        end
+      end
+
       private
 
       def send_notification(object, method, *params)
         params = [object.updated_at, object.to_ref] + params
-        @transports.each do |transport|
-          transport.send(method, *params)
-        end
+        RRRSpec::Server.redis.publish(
+          'rrrspec:global_notification',
+          Marshal.dump(JSONRPCTransport.compose_message(method, params, nil)),
+        )
       end
     end
   end

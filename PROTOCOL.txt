@@ -1,7 +1,6 @@
 TasksetRef : Reference
 TaskRef : Reference
 TrialRef : Reference
-TrialStatus : ['error', 'timeout', 'failed', 'pending', 'passed']
 StdOut : String
 StdErr : String
 PassedCount : Maybe Int
@@ -17,10 +16,12 @@ SlaveCommand : String
 SlaveName : String
 SlaveRef : Reference
 MaxTrials : Int
-TasksetStatus : ['waiting', 'running', 'succeeded', 'cancelled', 'finished']
 Task : (SpecPath, SpecSHA1, HardTimeoutSec, SoftTimeoutSec)
 SpecSHA1 : String
 AverageSec : Int
+TasksetStatus : ['rsync_waiting', 'waiting', 'running', 'succeeded', 'cancelled', 'failed']
+TaskStatus : [nil, 'passed', 'pending', 'failed']
+TrialStatus : [nil, 'error', 'timeout', 'failed', 'pending', 'passed']
 
 # Master
 
@@ -36,6 +37,7 @@ query_spec_average_sec : TasksetClass -> SpecSHA1 -> AverageSec
 ## Taskset
 
 create_taskset : (RSyncName, SetupCommand, SlaveCommand, WorkerType, TasksetClass, MaxWorkers, MaxTrials, [Task]) -> TasksetRef
+dispatch_taskset : TasksetRef -> ()
 dequeue_task : TasksetRef -> Maybe (TaskRef, SpecPath, HardTimeoutSec, SoftTimeoutSec)
 try_finish_taskset : TasksetRef -> ()
 fail_taskset : TasksetRef -> ()

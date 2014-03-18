@@ -1,5 +1,9 @@
 module RRRSpec
   class JSONRPCTransport
+    def self.compose_message(method, params, message_id)
+      MultiJson.dump(method: method, params: params, id: message_id)
+    end
+
     def initialize(handler, throw_exception: false)
       @handler = handler
       @throw_exception = throw_exception
@@ -58,7 +62,7 @@ module RRRSpec
 
       @ws.on(:message) do |event|
         Fiber.new do
-          RRRSpec.logger.info("Message:  #{event.data}")
+          RRRSpec.logger.info("Received: #{event.data}")
           response = call_handler(MultiJson.load(event.data))
           RRRSpec.logger.info("Response: #{response}")
           if response
@@ -90,16 +94,21 @@ module RRRSpec
     end
 
     def send(method, *params)
-      @ws.send(MultiJson.dump(method: method, params: params, id: nil))
+      direct_send(JSONRPCTransport.compose_message(method, params, nil))
     end
 
     def sync_call(method, *params)
       message_id = (@message_id += 1)
       @waitings[message_id] = Fiber.current
-      @ws.send(MultiJson.dump(method: method, params: params, id: message_id))
+      direct_send(JSONRPCTransport.compose_message(method, params, message_id))
       result, err = Fiber.yield
       raise err if err.present?
       result
+    end
+
+    def direct_send(message)
+      RRRSpec.logger.info("Sent:     #{message}")
+      @ws.send(message)
     end
 
     private
@@ -152,7 +161,7 @@ module RRRSpec
       response = MultiJson.load(@conn.post do |req|
         req.url '/'
         req.headers['Content-Type'] = 'application/json'
-        req.body = MultiJson.dump(method: method, params: params, id: 0)
+        req.body = JSONRPCTransport.compose_message(method, params, 0)
       end.body)
 
       raise response['error'] if response['error'].present?

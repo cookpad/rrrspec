@@ -17,8 +17,8 @@ module RRRSpec
       private
 
       def proxy(obj)
-        path_elems = ['rrrspec', @klass.name, @name, obj.id.to_s]
-        filepath = File.join(RRRSpec.config.execute_log_text_path, path_elems.join('-'))
+        path_elems = [*@klass.name.split('::').map(&:downcase), @name.to_s, obj.id.to_s]
+        filepath = File.join(RRRSpec.config.execute_log_text_path, *path_elems)
         LargeStringProxy.new(path_elems.join(':'), filepath)
       end
 

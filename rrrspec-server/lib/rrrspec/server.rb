@@ -1,9 +1,10 @@
 require 'fiber'
 require 'fileutils'
 require 'open3'
-require 'set'
-require 'socket'
 require 'securerandom'
+require 'set'
+require 'singleton'
+require 'socket'
 
 require 'active_model'
 require 'active_record'
@@ -12,9 +13,11 @@ require 'active_support/core_ext'
 require 'active_support/inflector'
 require 'active_support/time'
 require 'bundler'
+require 'em-hiredis'
 require 'eventmachine'
 require 'faye/websocket'
 require 'redis'
+require 'redis/connection/hiredis'
 
 ActiveSupport::Inflector::Inflections.instance.singular('Slaves', 'Slave')
 ActiveSupport::Inflector::Inflections.instance.singular('slaves', 'slave')
@@ -39,30 +42,14 @@ module RRRSpec
   module Server
     module_function
 
-    def redis
-      # After the process is daemonized, the redis instance is in invalid state.
-      # We avoid using such instance by checking the PID.
-      if not Thread.current[:pid] or Thread.current[:pid] != Process.pid
-        Thread.current[:redis] = nil
-        Thread.current[:pid] = Process.pid
-      end
+    # TODO: These are not fork aware. We should consider pre-fork environments.
 
-      # It is probable that if two other threads shares one redis connection
-      # one thread blocks the other thread. We avoid this by using separate
-      # connections.
-      Thread.current[:redis] ||= Redis.new(RRRSpec.config.redis)
+    def redis
+      Thread.current[:redis] ||= Redis.new(url: RRRSpec.config.redis)
     end
 
     def redis=(redis)
       Thread.current[:redis] = redis
-      Thread.current[:pid] = Process.pid
-    end
-
-    def flushredis
-      Thread.list.each do |thread|
-        thread[:redis] = nil
-        thread[:pid] = nil
-      end
     end
   end
 end

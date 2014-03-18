@@ -48,6 +48,13 @@ module RRRSpec
     end
 
     class Taskset < ActiveRecord::Base
+      STATUS_RSYNC_WAITING = 'rsync_waiting'
+      STATUS_WAITING = 'waiting'
+      STATUS_RUNNING = 'running'
+      STATUS_SUCCEEDED = 'succeeded'
+      STATUS_FAILED = 'failed'
+      STATUS_CANCELLED = 'cancelled'
+
       include JSONConstructor::TasksetJSONConstructor
       include LargeStringAttribute
       include TypeIDReferable
@@ -60,12 +67,12 @@ module RRRSpec
         # TODO
       end
 
-      def self.running
-        where(status: [nil, 'running'])
+      def self.using
+        where(status: [STATUS_RSYNC_WAITING, STATUS_WAITING, STATUS_RUNNING])
       end
 
       def self.is_running?(rsync_name)
-        !running.where(rsync_name: rsync_name).empty?
+        !users(rsync_name).using.empty?
       end
 
       def self.full
@@ -76,20 +83,30 @@ module RRRSpec
         )
       end
 
+      def self.users(rsync_name)
+        where(rsync_name: rsync_name)
+      end
+
       def queue
         @queue ||= TaskQueue.new(id)
       end
 
+      def start_working
+        if status == STATUS_RSYNC_WAITING
+          update_attributes(status: STATUS_WAITING)
+        end
+      end
+
       def fail
-        finish('failed')
+        finish(STATUS_FAILED)
       end
 
       def cancel
-        finish('cancelled')
+        finish(STATUS_CANCELLED)
       end
 
       def finished?
-        !(status.blank? || status == 'running')
+        [STATUS_SUCCEEDED, STATUS_FAILED, STATUS_CANCELLED].include?(status)
       end
 
       def finish(status)
@@ -102,19 +119,19 @@ module RRRSpec
       def try_finish
         return if finished?
 
-        unfinished_tasks = tasks.where(status: nil).includes(:trials).select do |task|
+        unfinished_tasks = tasks.unfinished.includes(:trials).select do |task|
           !task.try_finish(max_trials)
         end
 
         if unfinished_tasks.empty?
-          finish(tasks.where(status: 'failed').count > 0 ? 'failed' : 'succeeded')
+          finish(tasks.failed.count > 0 ? STATUS_FAILED : STATUS_SUCCEEDED)
         elsif queue.empty?
           requeue_speculative(unfinished_tasks)
         end
       end
 
       def requeue_speculative(tasks)
-        groups = tasks.group_by { |task| task.trials.size }
+        groups = tasks.unfinished.group_by { |task| task.trials.size }
         groups[groups.keys.min].sample.enqueue
       end
     end
@@ -122,15 +139,27 @@ module RRRSpec
     class Task < ActiveRecord::Base
       ONE_DAY_SEC = 24 * 60 * 60
       AVERAGE_ROW_LIMIT = 100
+      STATUS_UNFINISHED = nil
+      STATUS_PASSED = 'passed'
+      STATUS_PENDING = 'pending'
+      STATUS_FAILED = 'failed'
 
       include JSONConstructor::TaskJSONConstructor
       include TypeIDReferable
       belongs_to :taskset
       has_many :trials
 
+      def self.unfinished
+        where(status: STATUS_UNFINISHED)
+      end
+
+      def self.failed
+        where(status: STATUS_FAILED)
+      end
+
       def self.calc_average(taskset_class, spec_sha1)
         times = Trial.joins(task: [:taskset]).where(
-          status: ['passed', 'pending'],
+          status: [STATUS_PASSED, STATUS_PENDING],
           tasks: {spec_sha1: spec_sha1},
           tasksets: {taskset_class: taskset_class},
         ).order(created_at: :desc).limit(AVERAGE_ROW_LIMIT).pluck(:started_at, :finished_at)
@@ -178,18 +207,18 @@ module RRRSpec
 
         statuses = trials.pluck(:status)
         case
-        when statuses.include?('passed')
-          update_attributes(status: 'passed')
+        when statuses.include?(Trial::STATUS_PASSED)
+          update_attributes(status: STATUS_PASSED)
           Task.update_average(taskset.taskset_class, spec_sha1)
           true
-        when statuses.include?('pending')
-          update_attributes(status: 'pending')
+        when statuses.include?(Trial::STATUS_PENDING)
+          update_attributes(status: STATUS_PENDING)
           Task.update_average(taskset.taskset_class, spec_sha1)
           true
         when statuses.include?(nil)
           false
         else
-          faileds = statuses.count { |status| ['failed', 'error', 'timeout'].include?(status) }
+          faileds = statuses.count { |status| [Trial::STATUS_FAILED, Trial::STATUS_ERROR, Trial::STATUS_TIMEOUT].include?(status) }
           if faileds >= max_trials
             update_attributes(status: 'failed')
             true
@@ -206,6 +235,13 @@ module RRRSpec
     end
 
     class Trial < ActiveRecord::Base
+      STATUS_UNFINISHED = nil
+      STATUS_PASSED = 'passed'
+      STATUS_PENDING = 'pending'
+      STATUS_FAILED = 'failed'
+      STATUS_ERROR = 'error'
+      STATUS_TIMEOUT = 'timeout'
+
       include JSONConstructor::TrialJSONConstructor
       include LargeStringAttribute
       include TypeIDReferable

@@ -15,17 +15,25 @@ module RRRSpec
       end
 
       def start(transport)
-        builder = TasksetBuilder.new(transport, RRRSpec.config.unknown_spec_timeout_sec, RRRSpec.config.least_timeout_sec)
+        builder = TasksetBuilder.new(transport)
+        builder.packaging_dir = RRRSpec.config.packaging_dir
+        builder.rsync_remote_path = RRRSpec.config.rsync_remote_path
+        builder.rsync_options = RRRSpec.config.rsync_options
+        builder.unknown_spec_timeout_sec = @options[:unknown_spec_timeout_sec] || RRRSpec.config.unknown_spec_timeout_sec
+        builder.least_timeout_sec = @options[:least_timeout_sec] || RRRSpec.config.least_timeout_sec
+        builder.average_multiplier = @options[:average_multiplier] || RRRSpec.config.average_multiplier
+        builder.hard_timeout_margin_sec = @options[:hard_timeout_margin_sec] || RRRSpec.config.hard_timeout_margin_sec
+
         builder.rsync_name = @options[:rsync_name] || RRRSpec.config.rsync_name || ENV['USER']
+        builder.worker_type = @options[:worker_type] || RRRSpec.config.worker_type
+        builder.max_workers = @options[:max_workers] || RRRSpec.config.max_workers
+        builder.max_trials = @options[:max_trials] || RRRSpec.config.max_trials
+        builder.taskset_class = RRRSpec.config.taskset_class
         builder.setup_command = RRRSpec.config.setup_command
         builder.slave_command = RRRSpec.config.slave_command
-        builder.worker_type = @options[:worker_type] || RRRSpec.config.worker_type
-        builder.taskset_class = RRRSpec.config.taskset_class
-        builder.max_workers = RRRSpec.config.max_workers
-        builder.max_trials = RRRSpec.config.max_trials
         builder.spec_files = RRRSpec.config.spec_files
+        taskset_ref = builder.create_and_start
 
-        taskset_ref = builder.start
         puts taskset_ref[1]
         transport.close
       end
@@ -34,7 +42,7 @@ module RRRSpec
         taskset_id = ARGV[0]
         if taskset_id
           taskset_ref = [:taskset, taskset_id.to_i]
-          transport.send(:cancel_taskset, taskset_ref)
+          transport.sync_call(:cancel_taskset, taskset_ref)
           transport.close
         else
           raise "Specify the taskset id"
@@ -44,7 +52,7 @@ module RRRSpec
       def cancelall(transport)
         rsync_name = ARGV[0]
         if rsync_name
-          transport.send(:cancel_user_taskset, rsync_name)
+          transport.sync_call(:cancel_user_taskset, rsync_name)
           transport.close
         else
           raise "Specify the rsync name"
@@ -160,8 +168,26 @@ module RRRSpec
         when 'start'
           OptionParser.new do |opts|
             opts.on('--key-only') { |v| command_options[:key_only] = v }
+            opts.on('--unknown-spec-timeout-sec SECOND', OptionParser::DecimalInteger) do |second|
+              command_options[:unknown_spec_timeout_sec] = second
+            end
+            opts.on('--least-timeout-sec SECOND', OptionParser::DecimalInteger) do |second|
+              command_options[:least_timeout_sec] = second
+            end
+            opts.on('--average-multiplier NUM', OptionParser::DecimalInteger) do |num|
+              command_options[:average_multiplier] = num
+            end
+            opts.on('--hard-timeout-margin-sec SECOND', OptionParser::DecimalInteger) do |num|
+              command_options[:hard_timeout_margin_sec] = second
+            end
             opts.on('--rsync-name NAME') { |name| command_options[:rsync_name] = name }
             opts.on('--worker-type TYPE') { |type| command_options[:worker_type] = type }
+            opts.on('--max-workers NUM', OptionParser::DecimalInteger) do |num|
+              command_options[:max_workers] = num
+            end
+            opts.on('--max-trials NUM', OptionParser::DecimalInteger) do |num|
+              command_options[:max_trials] = num
+            end
           end.order!
         when 'cancel'
         when 'cancelall'
@@ -170,8 +196,8 @@ module RRRSpec
         when 'waitfor'
         when 'show'
           OptionParser.new do |opts|
-            opts.on('--failure-exit-code N', OptionParser::DecimalInteger) do |n|
-              command_options[:failure_exit_code] = n
+            opts.on('--failure-exit-code NUM', OptionParser::DecimalInteger) do |num|
+              command_options[:failure_exit_code] = num
             end
           end.order!
         end

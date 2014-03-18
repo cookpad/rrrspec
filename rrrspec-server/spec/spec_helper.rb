@@ -20,39 +20,26 @@ RSpec.configure do |config|
   # the seed, which is printed after each run.
   #     --seed 1234
   config.order = 'random'
+  config.include TestTransportHelper
 
   pid = nil
   config.before(:suite) do
     pid = Kernel.spawn("redis-server --port 9999 --save ''",
                        in: '/dev/null', out: '/dev/null', err: '/dev/null')
-    redis = Redis.new(port: 9999)
-    retry_count = 1
-    loop do
-      begin
-        redis.client.connect
-        break
-      rescue Redis::CannotConnectError
-        if retry_count < 10
-          retry_count += 1
-          sleep 0.01
-          retry
-        end
-        raise
-      end
-    end
+    Thread.new { EM.run }
   end
-
-  config.include TestTransportHelper
 
   config.before(:each) do
     RRRSpec.config = nil
-    RRRSpec::Server.flushredis
-
-    RRRSpec::Server.redis = Redis.new(port: 9999)
+    RRRSpec::Server.redis = Redis.new(url: 'redis://localhost:9999')
     RRRSpec::Server.redis.flushall
   end
 
+  config.after(:each) do
+  end
+
   config.after(:suite) do
+    EM.stop
     Process.kill('KILL', pid) if pid
   end
 

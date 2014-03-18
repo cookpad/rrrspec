@@ -3,37 +3,24 @@ module RRRSpec
     class MasterAPIHandler
       module NotificatorQuery
         def listen_to_global(transport)
-          @global_notificator.listen(transport)
+          GlobalNotificator.instance.listen(transport)
           nil
         end
 
         def listen_to_taskset(transport, taskset_ref)
-          @taskset_notificator.listen(transport, taskset_ref)
+          TasksetNotificator.instance.listen(transport, taskset_ref)
           nil
         end
 
         def close(transport)
-          @taskset_notificator.close(transport)
-          @global_notificator.close(transport)
+          TasksetNotificator.instance.close(transport)
+          GlobalNotificator.instance.close(transport)
           nil
         end
 
         protected
 
         def initialize_notificator
-          @taskset_notificator = TasksetNotificator.new
-          Taskset.after_update(&@taskset_notificator.method(:taskset_updated))
-          Task.after_update(&@taskset_notificator.method(:task_updated))
-          Trial.after_create(&@taskset_notificator.method(:trial_created))
-          Trial.after_update(&@taskset_notificator.method(:trial_updated))
-          WorkerLog.after_create(&@taskset_notificator.method(:worker_log_created))
-          WorkerLog.after_update(&@taskset_notificator.method(:worker_log_updated))
-          Slave.after_create(&@taskset_notificator.method(:slave_created))
-          Slave.after_update(&@taskset_notificator.method(:slave_updated))
-
-          @global_notificator = GlobalNotificator.new
-          Taskset.after_create(&@global_notificator.method(:taskset_created))
-          Taskset.after_update(&@global_notificator.method(:taskset_updated))
         end
       end
 
@@ -54,6 +41,7 @@ module RRRSpec
             max_workers: max_workers,
             max_trials: max_trials,
             taskset_class: taskset_class,
+            status: 'rsync_waiting',
           )
           tasks = tasks.map do |task_args|
             spec_path, spec_sha1, hard_timeout_sec, soft_timeout_sec = task_args
@@ -67,8 +55,14 @@ module RRRSpec
           tasks.sort_by { |task| [task.hard_timeout_sec, task.soft_timeout_sec] }.reverse_each do |task|
             taskset.queue.enqueue(task)
           end
-          Taskset.dispatch
           taskset.to_ref
+        end
+
+        def dispatch_taskset(transport, taskset_ref)
+          taskset = Taskset.from_ref(taskset_ref)
+          taskset.start_working
+          Taskset.dispatch
+          nil
         end
 
         def dequeue_task(transport, taskset_ref)
@@ -101,7 +95,9 @@ module RRRSpec
         end
 
         def cancel_user_taskset(transport, rsync_name)
-          # TODO
+          Taskset.users(rsync_name).using.each do |taskset|
+            taskset.cancel
+          end
           nil
         end
 
@@ -196,10 +192,6 @@ module RRRSpec
       include SlaveQuery
 
       def open(transport)
-      end
-
-      def initialize
-        initialize_notificator
       end
     end
   end
