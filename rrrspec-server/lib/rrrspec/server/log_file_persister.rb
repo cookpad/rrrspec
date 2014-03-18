@@ -11,12 +11,13 @@ module RRRSpec
     #
     # * Have a property named 'key'
     # * Set RRRSpec.configuration.execute_log_text_path
+    # * Have a singleton method :after_save
     #
     # Provides:
     #
     # * Methods named 'log', 'log=', 'log_log_path'.
     # * 'after_save' hook that persists a log to the file pointed by log_log_path.
-    # * Persist the value of the 'log' to File.join(execute_log_text_path, "#{key}_log.log") if it is dirty.
+    # * Persist the value of the 'log' to File.join(execute_log_text_path, "#{key.gsub(/\//, '_').gsub(/:/, '/')}_log.log") if it is dirty.
     module LogFilePersister
       extend ActiveSupport::Concern
 
@@ -28,7 +29,7 @@ module RRRSpec
             return nil unless send(:key)
             File.join(
               RRRSpec.configuration.execute_log_text_path,
-              "#{send(:key).gsub(/[\/:]/, '_')}#{suffix}.log"
+              "#{send(:key).gsub(/\//, '_').gsub(/:/, '/')}#{suffix}.log"
             )
           end
 
