@@ -105,6 +105,14 @@ module RRRSpec
         def query_taskset_status(transport, taskset_ref)
           Taskset.from_ref(taskset_ref).status
         end
+
+        def query_taskset_summary(transport, taskset_ref)
+          Taskset.from_ref(taskset_ref).as_summary_json
+        end
+
+        def active_tasksets(transport)
+          Taskset.using.map(&:to_ref)
+        end
       end
 
       module TaskQuery
@@ -135,6 +143,13 @@ module RRRSpec
           Worker.instance.update(transport, worker_name, worker_type, taskset_ref)
           Taskset.dispatch unless taskset_ref
           nil
+        end
+
+        def active_workers(transport)
+          workers = Worker.instance.current_workers
+          workers.map do |name, worker_type, taskset_ref|
+            [name, worker_type, taskset_ref]
+          end
         end
       end
 

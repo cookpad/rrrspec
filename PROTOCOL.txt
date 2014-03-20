@@ -44,6 +44,8 @@ fail_taskset : TasksetRef -> ()
 cancel_taskset : TasksetRef -> ()
 cancel_user_taskset : RSyncName -> ()
 query_taskset_status : TasksetRef -> TasksetStatus
+query_taskset_summary : TasksetRef -> {"status": TasksetStatus, "created_at": Timestamp, "finished_at": Timestamp, "task_count": TaskCount, "passed_count": PassedCount, "pending_count": PendingCount, "failed_count": FailedCount}
+active_tasksets : () -> [TasksetRef]
 
 ## Task
 
@@ -58,6 +60,7 @@ finish_trial : TrialRef -> TrialStatus -> StdOut -> StdErr -> PassedCount -> Pen
 ## Worker
 
 current_taskset : WorkerName -> WorkerType -> Maybe TasksetRef -> ()
+active_workers : () -> [[WorkerName, WorkerType, Maybe TasksetRef]]
 
 ## WorkerLog
 

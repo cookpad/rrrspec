@@ -35,7 +35,10 @@ bundle exec rrrspec-master --no-daemonize &
 bundle exec rrrspec-worker --no-daemonize &
 
 TASK_KEY=$(bundle exec rrrspec-client --config dot_rrrspec.rb start --key-only)
-echo TASK_KEY=$TASK_KEY
+
+bundle exec rrrspec-client --config dot_rrrspec.rb nodes
+bundle exec rrrspec-client --config dot_rrrspec.rb actives
+
 bundle exec rrrspec-client --config dot_rrrspec.rb waitfor $TASK_KEY
 bundle exec rrrspec-client --config dot_rrrspec.rb show $TASK_KEY --failure-exit-code=0
 echo FINISHED

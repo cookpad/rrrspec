@@ -60,12 +60,17 @@ module RRRSpec
       end
 
       def actives(transport)
-        # TODO
+        transport.sync_call(:active_tasksets).each do |taskset_ref|
+          puts taskset_ref[1]
+        end
         transport.close
       end
 
       def nodes(transport)
-        # TODO
+        transport.sync_call(:active_workers).each do |worker_name, worker_info|
+          worker_type, taskset_ref = worker_info
+          puts "#{worker_name}\t#{worker_type}\t#{taskset_ref ? taskset_ref[1] : ''}"
+        end
         transport.close
       end
 
@@ -85,8 +90,25 @@ module RRRSpec
       end
 
       def show(transport)
-        # TODO
-        transport.close
+        taskset_id = ARGV[0]
+        if taskset_id
+          taskset_ref = [:taskset, taskset_id.to_i]
+          h = transport.sync_call(:query_taskset_summary, taskset_ref)
+          puts "Status:   #{h['status']}"
+          puts "Created:  #{h['created_at']}"
+          puts "Finished: #{h['finished_at']}"
+          puts "Tasks:    #{h['task_count']}"
+          puts "Passed:   #{h['passed_count']}"
+          puts "Pending:  #{h['pending_count']}"
+          puts "Failed:   #{h['failed_count']}"
+          transport.close
+
+          unless h['status'] == 'succeeded'
+            exit(@options[:failure_exit_code] || 1)
+          end
+        else
+          raise "Specify the taskset id"
+        end
       end
 
       def taskset_updated(transport, timestamp, taskset_ref, h)

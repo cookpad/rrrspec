@@ -67,7 +67,7 @@ module RRRSpec
         waitings = dispatch_waiting.order(created_at: :asc)
         return if waitings.empty?
 
-        free_workers, assigned_workers = Worker.instance.current_workers
+        free_workers, assigned_workers = Worker.instance.current_workers_by_status
         waitings.each do |taskset|
           previously_assigned = assigned_workers[taskset.to_ref].size
           newly_assigned = 0
@@ -309,6 +309,23 @@ module RRRSpec
       end
 
       def current_workers
+        revoke_outdated
+        worker_types = RRRSpec::Server.redis.hgetall(WORKER_TYPE_KEY)
+        taskset_keys = RRRSpec::Server.redis.hgetall(WORKER_TASKSET_KEY)
+
+        workers = Hash.new
+        worker_types.each do |name, type|
+          taskset_ref = if taskset_id = taskset_keys[name]
+                          ['taskset', taskset_id.to_i]
+                        else
+                          nil
+                        end
+          workers[name] = [type, taskset_ref]
+        end
+        workers
+      end
+
+      def current_workers_by_status
         revoke_outdated
         worker_types = RRRSpec::Server.redis.hgetall(WORKER_TYPE_KEY)
         taskset_keys = RRRSpec::Server.redis.hgetall(WORKER_TASKSET_KEY)
