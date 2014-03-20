@@ -1,3 +1,5 @@
+@import "bootstrap"
+
 body
   padding-top: 20px
 
@@ -23,6 +25,42 @@ body
     padding-right: 2em
 
 .taskset
+  @extend .container
+
+  .head
+    @extend .panel
+    @extend .panel-default
+
+  .progressbars
+    .spec-progress
+      @extend .progress
+      .spec-progress-bar
+        @extend .progress-bar
+      .passed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
+    .example-progress
+      @extend .progress
+      .passed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
+
+  .tasklist
+    @extend .panel
+    @extend .panel-default
+
   .head
     .panel-heading
       .name

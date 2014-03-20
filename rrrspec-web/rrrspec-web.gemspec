@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "activerecord", "~> 4.0.2"
   spec.add_dependency "activesupport"
   spec.add_dependency "api-pagination"
+  spec.add_dependency "bootstrap-sass"
   spec.add_dependency "coffee-script", "~> 2.2.0"
   spec.add_dependency "grape"
   spec.add_dependency "haml", "~> 4.0.3"

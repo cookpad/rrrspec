@@ -92,6 +92,14 @@ module RRRSpec
         !users(rsync_name).using.empty?
       end
 
+      def self.recent
+        order(finished_at: :desc)
+      end
+
+      def self.has_failed_slaves
+        includes(:slaves).where(slaves: {status: Slave::STATUS_FAILURE_EXIT})
+      end
+
       def self.full
         includes(
           :tasks => [{:trials => [:task, :slave]}, :taskset],
@@ -438,6 +446,11 @@ module RRRSpec
     end
 
     class Slave < ActiveRecord::Base
+      STATUS_RUNNING = nil
+      STATUS_NORMAL_EXIT = 'normal_exit'
+      STATUS_TIMEOUT_EXIT = 'timeout_exit'
+      STATUS_FAILURE_EXIT = 'failure_exit'
+
       include JSONConstructor::SlaveJSONConstructor
       include TypeIDReferable
       belongs_to :taskset

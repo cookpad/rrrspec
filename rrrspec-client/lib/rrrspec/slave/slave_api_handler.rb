@@ -107,6 +107,7 @@ module RRRSpec
         end
       ensure
         transport.send(:current_trial, @slave_ref, nil)
+        transport.send(:finish_slave, @slave_ref, 'normal_exit')
       end
     end
   end

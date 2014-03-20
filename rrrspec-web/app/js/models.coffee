@@ -1,11 +1,14 @@
 dateFormat = (date)->
-  moment(date).format("YYYY-MM-DD HH:mm:ss z")
+  if date
+    moment(date).format("YYYY-MM-DD HH:mm:ss z")
+  else
+    null
 
 dateDuration = (start, finish)->
   moment.duration(moment(finish).diff(moment(start))).humanize()
 
 class @Taskset extends Backbone.Model
-  url: -> "/v1/tasksets/#{encodeURIComponent(@get('key'))}"
+  url: -> "/v1/tasksets/#{@get('id')}"
 
   parse: (obj, options) ->
     obj.created_at = new Date(obj.created_at) if obj.created_at
@@ -18,17 +21,8 @@ class @Taskset extends Backbone.Model
   isFull: -> !!@get('is_full')
   isFinished: -> !!@get('finished_at')
 
-  forTemplate: ->
-    j = @toJSON()
-    j['duration'] = dateDuration(j['created_at'], j['finished_at'])
-    if created_at = j['created_at']
-      j['created_at'] = dateFormat(created_at)
-      j['created_at_humanized'] = moment(created_at).fromNow()
-    j['finished_at'] = dateFormat(j['finished_at'])
-    j
-
 class @Task extends Backbone.Model
-  url: -> "/v1/tasks/#{encodeURIComponent(@get('key'))}"
+  url: -> "/v1/tasks/#{@get('id')}"
   parse: (obj, options) ->
     if obj.trials
       obj.trials = _.filter(obj.trials, (trial) -> trial['status'])
@@ -52,9 +46,6 @@ class @Task extends Backbone.Model
     else
       return [0, 0, 0]
     return [preferred.get('passed'), preferred.get('pending'), preferred.get('failed')]
-
-  forTemplate: ->
-    @toJSON()
 
 class @Tasks extends Backbone.Collection
   initialize: (options) ->
@@ -93,12 +84,6 @@ class @Trial extends Backbone.Model
     obj.started_at = new Date(obj.started_at) if obj.started_at
     obj.finished_at = new Date(obj.finished_at) if obj.finished_at
     obj
-  forTemplate: ->
-    j = @toJSON()
-    j['duration'] = dateDuration(j['started_at'], j['finished_at'])
-    j['started_at'] = dateFormat(j['started_at']) if j['started_at']
-    j['finished_at'] = dateFormat(j['finished_at']) if j['finished_at']
-    j
 
 class @WorkerLog extends Backbone.Model
   url: -> "/v1/worker_logs/#{encodeURIComponent(@get('key'))}"
@@ -106,20 +91,8 @@ class @WorkerLog extends Backbone.Model
     obj.started_at = new Date(obj.started_at)
     obj.rsync_finished_at = new Date(obj.rsync_finished_at) if obj.rsync_finished_at
     obj.setup_finished_at = new Date(obj.setup_finished_at) if obj.setup_finished_at
-    obj.finished_at = new Date(obj.finished_at) if obj.finished_at
+    obj.rspec_finished_at = new Date(obj.rspec_finished_at) if obj.rspec_finished_at
     obj
-
-  forTemplate: ->
-    j = @toJSON()
-    j['rsync_duration'] = dateDuration(j['started_at'], j['rsync_finished_at'])
-    j['setup_duration'] = dateDuration(j['rsync_finished_at'], j['setup_finished_at'])
-    j['test_duration'] = dateDuration(j['setup_finished_at'], j['finished_at'])
-
-    j['started_at'] = dateFormat(j['started_at']) if j['started_at']
-    j['rsync_finished_at'] = dateFormat(j['rsync_finished_at']) if j['rsync_finished_at']
-    j['setup_finished_at'] = dateFormat(j['setup_finished_at']) if j['setup_finished_at']
-    j['finished_at'] = dateFormat(j['finished_at']) if j['finished_at']
-    j
 
 class @WorkerLogs extends Backbone.Collection
   parse: (obj, options) ->
@@ -127,13 +100,6 @@ class @WorkerLogs extends Backbone.Collection
 
 class @Slave extends Backbone.Model
   url: -> "/v1/slaves/#{encodeURIComponent(@get('key'))}"
-  forTemplate: ->
-    j = @toJSON()
-    j['trials'] = _.map(j['trials'], (trial) ->
-      trial['encoded_key'] = encodeURIComponent(trial['key'])
-      trial
-    )
-    j
 
 class @Slaves extends Backbone.Collection
   parse: (obj, options) ->

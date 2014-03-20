@@ -12,32 +12,29 @@
           .modal-body
             Not found
 
-    .taskset.container.hidden
-      .head.panel.panel-default
-
+    .taskset.hidden
+      .head
       .progressbars
         %h5 FILES
-        .progress.spec-progress
-          .progress-bar.spec-progress-bar
-          .progress-bar.progress-bar-success.passed-spec-bar
-          .progress-bar.progress-bar-warning.pending-spec-bar
-          .progress-bar.progress-bar-danger.failed-spec-bar
+        .spec-progress
+          .spec-progress-bar
+          .passed-spec-bar
+          .pending-spec-bar
+          .failed-spec-bar
 
         %h5 EXAMPLES
-        .progress.example-progress
-          .progress-bar.progress-bar-success.passed-example-bar
-          .progress-bar.progress-bar-warning.pending-example-bar
-          .progress-bar.progress-bar-danger.failed-example-bar
+        .example-progress
+          .passed-example-bar
+          .pending-example-bar
+          .failed-example-bar
 
-      .panel.panel-default.tasklist
+      .tasklist
         .panel-heading FAILED TASKS
         %ul.list-group.tasklist-list
           %li.list-group-item
             %ul.tasklist-header
               %li.taskstatus Status
               %li.file File
-              %li.pull-right.trial-count Trials
-              %li.pull-right.estimate-sec Avg.
 
       .panel.panel-default.worker-logs
         .panel-heading WORKERS
@@ -50,29 +47,23 @@
       %script#head-template{type: 'text/template'}
         .panel-heading.clearfix
           %h4.panel-title
-            %a.name{data: {toggle: 'collapse'}, href: '#taskset-info'} {{key}}
+            %a.name{data: {toggle: 'collapse'}, href: '#taskset-info'} {{id}}
           %span.label.status {{status}}
         #taskset-info.panel-collapse.collapse
           .panel-body
             %dl.dl-horizontal
-              %dt Name
-              %dd.name {{key}}
               %dt Status
               %dd.status {{status}}
               %dt Created
-              %dd.created-at {{created_at}}
+              %dd.created-at {{date created_at}}
               %dt Finished
-              %dd.finished-at {{finished_at}} ({{duration}})
+              %dd.finished-at {{dateWithDuration finished_at created_at}}
               %dt RSync Name
               %dd.rsync-name {{rsync_name}}
               %dt Max Trials
               %dd.max-trials {{max_trials}}
               %dt Max Workers
               %dd.max-workers {{max_workers}}
-              %dt Unknown spec timeout sec
-              %dd.unknown-spec-timeout-sec {{unknown_spec_timeout_sec}}
-              %dt Least timeout sec
-              %dd.least-timeout-sec {{least_timeout_sec}}
               %dt Taskset class
               %dd.taskset-class {{taskset_class}}
               %dt Worker type
@@ -90,24 +81,22 @@
       %script#tasklist-template{type: 'text/template'}
         %ul.tasklist-item.header
           %li.taskstatus {{status}}
-          %li.file {{spec_file}}
-          %li.pull-right.trial-count {{trials.length}}
-          %li.pull-right.estimate-sec {{estimate_sec}}
+          %li.file {{spec_path}}
         .body.collapse.trials
 
       %script#trial-template{type: 'text/template'}
-        .panel-heading
-          .panel-title {{key}}
         %dl.dl-horizontal
+          %dt Name
+          %dd trial/{{id}}
           %dt Status
           %dd {{status}}
           %dt Started
-          %dd {{#started_at}}{{started_at}}{{/started_at}}
+          %dd {{date started_at}}
           %dt Finished
-          %dd {{#finished_at}}{{finished_at}} ({{duration}}){{/finished_at}}
+          %dd {{dateWithDuration finished_at started_at}}
           %dt Slave
           %dd
-            %a{href: "#slave/{{slave.key}}"} {{slave.key}}
+            %a{href: "#slave/{{slave.id}}"} slave/{{slave.id}}
           %dt Passed
           %dd {{passed}}
           %dt Pending
@@ -125,19 +114,19 @@
 
 
       %script#worker-log-template{type: 'text/template'}
-        .header {{ key }}
+        .header worker/{{id}}
         .body.collapse
           %dl.dl-horizontal
             %dt Name
-            %dd {{key}}
+            %dd {{worker_name}}
             %dt Started
-            %dd {{started_at}}
+            %dd {{date started_at}}
             %dt RSync Finished
-            %dd {{#rsync_finished_at}}{{rsync_finished_at}} ({{rsync_duration}}){{/rsync_finished_at}}
+            %dd {{dateWithDuration rsync_finished_at started_at}}
             %dt Setup Finished
-            %dd {{#setup_finished_at}}{{setup_finished_at}} ({{setup_duration}}){{/setup_finished_at}}
-            %dt Finished
-            %dd {{#finished_at}}{{finished_at}} ({{test_duration}}){{/finished_at}}
+            %dd {{dateWithDuration setup_finished_at rsync_finished_at}}
+            %dt RSpec Finished
+            %dd {{dateWithDuration rspec_finished_at setup_finished_at}}
 
           %h5 LOG
           %pre.log.pre-scrollable
@@ -145,7 +134,7 @@
 
       %script#slave-template{type: 'text/template'}
         .header
-          {{key}}
+          slave/{{id}}
           .exit-status.pull-right
             {{status}}
         .body.collapse
@@ -153,7 +142,7 @@
           %ol
             {{#trials}}
             %li
-              %a{href: "#trial/{{encoded_key}}"} {{key}}
+              %a{href: "#trial/{{id}}"} trial/{{id}}
             {{/trials}}
 
           %h5 LOG

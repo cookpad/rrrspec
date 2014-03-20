@@ -10,24 +10,24 @@ module RRRSpec
       resource :tasksets do
         desc "Return active tasksets"
         get :actives do
-          ActiveTaskset.list
+          RRRSpec::Server::Taskset.using
         end
 
         desc "Return recently finished tasksets"
         get :recents do
-          paginate(RRRSpec::Server::Persistence::Taskset.recent).map(&:as_json_with_no_relation)
+          paginate(RRRSpec::Server::Taskset.recent).map(&:as_nodetail_json)
         end
 
         desc "Return tasksets that contains failure_exit slave"
         get :failure_slaves do
-          paginate(RRRSpec::Server::Persistence::Taskset.has_failed_slaves.recent).map(&:as_json_with_no_relation)
+          paginate(RRRSpec::Server::Taskset.has_failed_slaves.recent).map(&:as_nodetail_json)
         end
 
         desc "Return a taskset."
-        params { requires :key, type: String, desc: "Taskset key." }
-        route_param :key do
+        params { requires :taskset_id, type: Integer, desc: "Taskset id." }
+        route_param :taskset_id do
           get do
-            p_obj = RRRSpec::Server::Persistence::Taskset.where(key: params[:key]).full.first
+            p_obj = RRRSpec::Server::Taskset.find(taskset_id).full.first
             if p_obj
               p_obj.as_full_json.update('is_full' => true)
             else

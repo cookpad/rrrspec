@@ -1,8 +1,10 @@
 require 'sinatra/base'
-require 'sinatra/assetpack'
-require 'haml'
+
 require 'sass'
+require 'bootstrap-sass'
 require 'coffee-script'
+require 'haml'
+require 'sinatra/assetpack'
 
 module RRRSpec
   module Web
@@ -19,15 +21,24 @@ module RRRSpec
           '/js/vendor/jquery-1.10.2.min.js',
           '/js/vendor/underscore-min.js',
           '/js/vendor/backbone-min.js',
-          '/js/vendor/mustache.js',
-          '/js/vendor/bootstrap.min.js',
+          '/js/vendor/handlebars-v1.3.0.js',
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'affix'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'alert'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'button'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'carousel'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'collapse'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'dropdown'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'tab'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'transition'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'scrollspy'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'modal'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'tooltip'),
+          File.join(Bootstrap.javascripts_path, 'bootstrap', 'popover'),
           '/js/vendor/moment.min.js',
           '/js/models.js',
         ]
 
         CSSLIBS = [
-          '/css/vendor/bootstrap.min.css',
-          '/css/vendor/bootstrap-theme.min.css',
         ]
 
         js :tasksets, JSLIBS + ["/js/tasksets.js"]

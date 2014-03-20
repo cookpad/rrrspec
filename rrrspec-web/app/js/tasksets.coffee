@@ -1,9 +1,4 @@
-
-dateFormat = (date)->
-  moment(date).format("YYYY-MM-DD HH:mm:ss z")
-
-dateDuration = (start, finish)->
-  moment.duration(moment(finish).diff(moment(start))).humanize()
+//= require bootstrap
 
 taskIdFromTrialId = (trialId)->
   trialId.match(/^(.*):trial:/)[1]
@@ -35,9 +30,10 @@ class TasksetView extends Backbone.View
 
 class HeadView extends Backbone.View
   el: '.head'
+  template: Handlebars.compile($('#head-template').html())
 
   render: ->
-    @$el.html(Mustache.render($('#head-template').html(), @model.forTemplate()))
+    @$el.html(@template(@model.attributes))
     @$('.panel-heading .status').addClass(
       switch @model.get('status')
         when 'running' then 'label-active'
@@ -135,11 +131,12 @@ class TaskListView extends Backbone.View
 class TaskView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item'
+  template: Handlebars.compile($('#tasklist-template').html())
 
   initialize: (options) ->
     @subviews = {}
   render: ->
-    @$el.html(Mustache.render($('#tasklist-template').html(), @model.forTemplate()))
+    @$el.html(@template(@model.attributes))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
     switch @model.get('status')
@@ -177,9 +174,10 @@ class TaskView extends Backbone.View
 
 class TrialView extends Backbone.View
   className: 'panel'
+  template: Handlebars.compile($('#trial-template').html())
 
   render: ->
-    @$el.html(Mustache.render($('#trial-template').html(), @model.forTemplate()))
+    @$el.html(@template(@model.attributes))
 
   scrollIntoView: ->
     $('html, body').animate(
@@ -213,9 +211,10 @@ class WorkerLogListView extends Backbone.View
 class WorkerLogView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item hidden'
+  template: Handlebars.compile($('#worker-log-template').html())
 
   render: ->
-    @$el.html(Mustache.render($('#worker-log-template').html(), @model.forTemplate()))
+    @$el.html(@template(@model.attributes))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
 
@@ -256,9 +255,10 @@ class SlaveListView extends Backbone.View
 class SlaveView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item hidden'
+  template: Handlebars.compile($('#slave-template').html())
 
   render: ->
-    @$el.html(Mustache.render($('#slave-template').html(), @model.forTemplate()))
+    @$el.html(template(@model.attributes))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
 

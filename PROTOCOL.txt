@@ -13,6 +13,7 @@ RSyncName : String
 WorkerLogRef : Reference
 SetupCommand : String
 SlaveCommand : String
+SlaveStatus : [nil, 'normal_exit', 'timeout_exit', 'failure_exit']
 SlaveName : String
 SlaveRef : Reference
 MaxTrials : Int
@@ -75,8 +76,8 @@ finish_worker_log : WorkerLogRef -> ()
 
 create_slave : SlaveName -> TasksetRef -> SlaveRef
 current_trial : SlaveRef -> Maybe TrialRef -> ()
-finish_slave : SlaveRef -> Status -> ()
-force_finish_slave : SlaveName -> Status -> ()
+finish_slave : SlaveRef -> SlaveStatus -> ()
+force_finish_slave : SlaveName -> SlaveStatus -> ()
 
 # Worker
 
