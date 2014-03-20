@@ -43,7 +43,7 @@ module RRRSpec
 
       def worker_log_updated(worker_log)
         changes = {}
-        task.taskset.changes.each do |property, diff|
+        worker_log.changes.each do |property, diff|
           case property
           when 'rsync_finished_at' then changes[:rsync_finished_at] = diff.last
           when 'setup_finished_at' then changes[:setup_finished_at] = diff.last

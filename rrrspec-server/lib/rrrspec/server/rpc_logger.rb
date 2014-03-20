@@ -9,8 +9,7 @@ module RRRSpec
 
       def write(string)
         now = Time.zone.now
-        @transport.send(@method, @worker_log_ref,
-                        now.strftime("%F %T ") + string + "\n")
+        @transport.send(@method, @ref, now.strftime("%F %T ") + string + "\n")
       end
     end
   end

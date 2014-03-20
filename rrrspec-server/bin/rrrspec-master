@@ -57,14 +57,8 @@ RRRSpec::Server.daemonizer('rrrspec-master') do
   server = Thin::Server.new('0.0.0.0', RRRSpec.config.port || 8080, app)
   server.start
 
-  finish_detector = proc do
-    unless server.running?
-      EM.stop
-    else
-      EM.next_tick { finish_detector.call }
-    end
+  EM.add_periodic_timer(1) do
+    EM.stop unless server.running?
   end
-  finish_detector.call
-
   EM.reactor_thread.join
 end

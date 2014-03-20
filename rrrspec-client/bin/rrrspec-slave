@@ -2,5 +2,5 @@
 require 'eventmachine'
 require 'rrrspec/slave'
 
-app = RRRSpec::Slave.slave_app(options)
+app = RRRSpec::Slave.slave_app
 EM.run { app.run }

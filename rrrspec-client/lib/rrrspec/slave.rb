@@ -30,7 +30,7 @@ module RRRSpec
       RRRSpec.application_type = :slave
       SlaveApp.new(
         ENV['RRRSPEC_MASTER_URL'],
-        [:taskset, ENV['RRRSPEC_TAKSET_ID'].to_i],
+        ['taskset', ENV['RRRSPEC_TASKSET_ID'].to_i],
         ENV['RRRSPEC_WORKING_PATH'],
       )
     end

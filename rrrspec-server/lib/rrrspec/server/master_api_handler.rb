@@ -15,6 +15,7 @@ module RRRSpec
         def close(transport)
           TasksetNotificator.instance.close(transport)
           GlobalNotificator.instance.close(transport)
+          Worker.instance.close(transport)
           nil
         end
 
@@ -131,7 +132,7 @@ module RRRSpec
 
       module WorkerQuery
         def current_taskset(transport, worker_name, worker_type, taskset_ref)
-          Worker.with_name(worker_name).current_taskset_ref = taskset_ref
+          Worker.instance.update(transport, worker_name, worker_type, taskset_ref)
           Taskset.dispatch unless taskset_ref
           nil
         end
@@ -161,6 +162,11 @@ module RRRSpec
           WorkerLog.from_ref(worker_log_ref).finish_rspec
           nil
         end
+
+        def finish_worker_log(transport, worker_log_ref)
+          WorkerLog.from_ref(worker_log_ref).finish
+          nil
+        end
       end
 
       module SlaveQuery
@@ -178,7 +184,12 @@ module RRRSpec
         end
 
         def force_finish_slave(transport, slave_name, status)
-          # TODO
+          if slave = Slave.find_by_name(slave_name)
+            slave.trials.unfinished.each do |trial|
+              trial.finish(Trial::STATUS_ERROR, nil, nil, 0, 0, 0)
+            end
+          end
+          nil
         end
       end
 

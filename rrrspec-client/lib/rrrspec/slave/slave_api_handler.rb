@@ -1,5 +1,7 @@
 module RRRSpec
   module Slave
+    class SoftTimeoutException < Exception; end
+
     class InspectingFormatter
       attr_reader :passed, :pending, :failed
 
@@ -43,8 +45,6 @@ module RRRSpec
       TASKQUEUE_ARBITER_TIMEOUT = 20
       TIMEOUT_EXITCODE = 42
 
-      class SoftTimeoutException < Exception; end
-
       def initialize(taskset_ref, working_path)
         @taskset_ref = taskset_ref
         @working_path = working_path
@@ -55,13 +55,13 @@ module RRRSpec
 
       def open(transport)
         if @slave_ref.blank?
-          @slave_ref, err = transport.sync_call(:create_slave, RRRSpec.generate_slave_name, @taskset_ref)
-          EM.defer do
-            begin
-              loop(!@shutdown) { work(transport) }
-            ensure
-              EM.stop_event_loop
+          @slave_ref = transport.sync_call(:create_slave, RRRSpec.generate_slave_name, @taskset_ref)
+          begin
+            until @shutdown do
+              work(transport)
             end
+          ensure
+            EM.stop_event_loop
           end
         end
       end
@@ -71,7 +71,7 @@ module RRRSpec
       end
 
       def work(transport)
-        task, err = transport.sync_call(:dequeue_task, @taskset_ref)
+        task = transport.sync_call(:dequeue_task, @taskset_ref)
         if task.blank?
           @shutdown = true
           return
@@ -82,7 +82,7 @@ module RRRSpec
           return
         end
 
-        trial_ref, err = transport.sync_call(:create_trial, task_ref, @slave_ref)
+        trial_ref = transport.sync_call(:create_trial, task_ref, @slave_ref)
         transport.send(:current_trial, @slave_ref, trial_ref)
         @rspec_runner.reset
         stdout, stderr, status = @rspec_runner.setup(File.join(@working_path, spec_path))

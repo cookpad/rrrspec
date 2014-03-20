@@ -11,17 +11,20 @@ module RRRSpec
 
       def self.execute(logger, *cmd, **opts)
         stdin_string = opts.delete(:stdin_text)
-        stdin, stdout, stderr, wait_thr = Bundler.with_clean_env { Open3.popen3(*cmd) }
+        stdin, stdout, stderr, wait_thr = Bundler.with_clean_env { Open3.popen3(*cmd, opts) }
         stdin.write(stdin_string) if stdin_string
         stdin.close
         Thread.fork do
           reads = [stdout, stderr]
-          IO.select(reads)[0].each do |r|
-            line = r.gets
-            if line
-              logger.write("#{r == stdout ? "OUT" : "ERR"} #{line.strip}")
-            else
-              reads.delete(r)
+          loop do
+            break if reads.empty?
+            IO.select(reads)[0].each do |r|
+              line = r.gets
+              if line
+                logger.write("#{r == stdout ? "OUT" : "ERR"} #{line.strip}")
+              else
+                reads.delete(r)
+              end
             end
           end
           wait_thr.value
@@ -92,8 +95,10 @@ module RRRSpec
         transport.send(:finish_worker_log, worker_log_ref) if worker_log_ref
       end
 
-      def cancel_current_execution(transport)
-        @shutdown = true
+      def taskset_finished(transport, taskset_ref)
+        if @current_taskset == taskset_ref
+          @shutdown = true
+        end
         nil
       end
 
@@ -130,7 +135,8 @@ module RRRSpec
         RRRSpec.config.slave_processes.times.map do |i|
           slave_number = i
           Thread.fork do
-            loop(!@shutdown) do
+            loop do
+              break if @shutdown
               uuid = SecureRandom.uuid
               status = CommandExecutor.batch(
                 logger,

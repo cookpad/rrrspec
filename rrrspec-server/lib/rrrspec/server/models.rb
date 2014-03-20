@@ -64,7 +64,24 @@ module RRRSpec
       large_string :log
 
       def self.dispatch
-        # TODO
+        waitings = dispatch_waiting.order(created_at: :asc)
+        return if waitings.empty?
+
+        free_workers, assigned_workers = Worker.instance.current_workers
+        waitings.each do |taskset|
+          previously_assigned = assigned_workers[taskset.to_ref].size
+          newly_assigned = 0
+          loop do
+            break if previously_assigned + newly_assigned >= taskset.max_workers
+            break if free_workers[taskset.worker_type].empty?
+            Worker.instance.assign(free_workers[taskset.worker_type].pop, taskset)
+            newly_assigned += 1
+          end
+        end
+      end
+
+      def self.dispatch_waiting
+        where(status: [STATUS_WAITING, STATUS_RUNNING])
       end
 
       def self.using
@@ -131,7 +148,7 @@ module RRRSpec
       end
 
       def requeue_speculative(tasks)
-        groups = tasks.unfinished.group_by { |task| task.trials.size }
+        groups = tasks.group_by { |task| task.trials.size }
         groups[groups.keys.min].sample.enqueue
       end
     end
@@ -206,6 +223,7 @@ module RRRSpec
         return true if status.present?
 
         statuses = trials.pluck(:status)
+        puts "id:#{id} #{statuses}"
         case
         when statuses.include?(Trial::STATUS_PASSED)
           update_attributes(status: STATUS_PASSED)
@@ -215,15 +233,14 @@ module RRRSpec
           update_attributes(status: STATUS_PENDING)
           Task.update_average(taskset.taskset_class, spec_sha1)
           true
-        when statuses.include?(nil)
-          false
         else
           faileds = statuses.count { |status| [Trial::STATUS_FAILED, Trial::STATUS_ERROR, Trial::STATUS_TIMEOUT].include?(status) }
           if faileds >= max_trials
+            puts "mark failed"
             update_attributes(status: 'failed')
             true
           else
-            reversed_enqueue
+            reversed_enqueue if statuses.size < max_trials
             false
           end
         end
@@ -250,6 +267,10 @@ module RRRSpec
       large_string :stdout
       large_string :stderr
 
+      def self.unfinished
+        where(status: STATUS_UNFINISHED)
+      end
+
       def finish(trial_status, stdout, stderr, passed_count, pending_count, failed_count)
         update_attributes(
           finished_at: Time.zone.now,
@@ -272,46 +293,102 @@ module RRRSpec
       end
     end
 
-    # TODO: Move to Redis
     class Worker
-      @@workers = Hash.new
+      include Singleton
 
-      def self.all
-        revoke_outdated
-        @@workers.values
+      THREE_MINUTES_SEC = 3 * 60
+      WORKER_ASSIGNMENT_KEY = ['rrrspec', 'worker', 'assignment'].join(':')
+      WORKER_TASKSET_FINISHED_KEY = ['rrrspec', 'worker', 'taskset_finished'].join(':')
+      WORKER_TYPE_KEY = ['rrrspec', 'worker', 'worker_type'].join(':')
+      WORKER_TASKSET_KEY = ['rrrspec', 'worker', 'current_taskset'].join(':')
+      WORKER_UPDATED_AT_KEY = ['rrrspec', 'worker', 'updated_at'].join(':')
+
+      def initialize
+        @name_to_transport = Hash.new
+        @transport_to_name = Hash.new
       end
 
-      def self.revoke_outdated
-        limit = Time.zone.now - OUTDATED_LIMIT_SEC.second
-        @@workers.values.each do |worker|
-          if worker.updated_at && worker.updated_at < limit
-            @@workers.delete(worker.name)
+      def current_workers
+        revoke_outdated
+        worker_types = RRRSpec::Server.redis.hgetall(WORKER_TYPE_KEY)
+        taskset_keys = RRRSpec::Server.redis.hgetall(WORKER_TASKSET_KEY)
+
+        frees = Hash.new { |h,k| h[k] = [] }
+        assigneds = Hash.new { |h,k| h[k] = [] }
+        worker_types.each do |name, type|
+          if taskset_id = taskset_keys[name]
+            assigneds[['taskset', taskset_id.to_i]] << name
+          else
+            frees[type] << name
+          end
+        end
+        return frees, assigneds
+      end
+
+      def revoke_outdated
+        limit = Time.zone.now.to_i - THREE_MINUTES_SEC
+        RRRSpec::Server.redis.hgetall(WORKER_UPDATED_AT_KEY).each do |name, updated_at|
+          updated_at = updated_at.to_i
+          if updated_at < limit
+            RRRSpec::Server.redis.hdel(WORKER_TYPE_KEY, name)
+            RRRSpec::Server.redis.hdel(WORKER_TASKSET_KEY, name)
+            RRRSpec::Server.redis.hdel(WORKER_UPDATED_AT_KEY, name)
           end
         end
       end
 
-      def self.with_name(name)
-        @@workers[name] ||= Worker.new(name)
+      def assign(name, taskset)
+        params = [taskset.to_ref, taskset.rsync_name, taskset.setup_command, taskset.slave_command, taskset.max_trials]
+        RRRSpec::Server.redis.publish(
+          WORKER_ASSIGNMENT_KEY,
+          Marshal.dump([name, JSONRPCTransport.compose_message(:assign_taskset, params, nil)]),
+        )
       end
 
-      attr_reader :name, :updated_at
-
-      def current_taskset_ref
-        @current_taskset_ref
+      def taskset_updated(taskset)
+        if taskset.finished?
+          RRRSpec::Server.redis.publish(
+            WORKER_TASKSET_FINISHED_KEY,
+            JSONRPCTransport.compose_message(:taskset_finished, [taskset.to_ref], nil),
+          )
+        end
       end
 
-      def current_taskset_ref=(taskset_ref)
-        @current_taskset_ref = taskset_ref ? taskset_ref : nil
-        @updated_at = Time.zone.now
-        taskset_ref
+      def update(transport, name, worker_type, taskset_ref)
+        @name_to_transport[name] = transport
+        @transport_to_name[transport] = name
+        RRRSpec::Server.redis.hset(WORKER_TYPE_KEY, name, worker_type)
+        if taskset_ref
+          RRRSpec::Server.redis.hdel(WORKER_TASKSET_KEY, taskset_ref[1].to_s)
+        else
+          RRRSpec::Server.redis.hdel(WORKER_TASKSET_KEY, name)
+        end
+        RRRSpec::Server.redis.hset(WORKER_UPDATED_AT_KEY, name, Time.zone.now.to_i.to_s)
       end
 
-      private
+      def close(transport)
+        if name = @transport_to_name[transport]
+          @name_to_transport.delete(name)
+          @transport_to_name.delete(transport)
+          RRRSpec::Server.redis.hdel(WORKER_TYPE_KEY, name)
+          RRRSpec::Server.redis.hdel(WORKER_TASKSET_KEY, name)
+          RRRSpec::Server.redis.hdel(WORKER_UPDATED_AT_KEY, name)
+        end
+      end
 
-      def initialize(name)
-        @name = name
-        @current_taskset_ref = nil
-        @updated_at = nil
+      def register_pubsub(pubsub_redis)
+        pubsub_redis.pubsub.subscribe(WORKER_ASSIGNMENT_KEY) do |m|
+          name, message = Marshal.load(m)
+          if transport = @name_to_transport[name]
+            transport.direct_send(message)
+          end
+        end
+
+        pubsub_redis.pubsub.subscribe(WORKER_TASKSET_FINISHED_KEY) do |message|
+          @name_to_transport.each do |name, transport|
+            transport.direct_send(message)
+          end
+        end
       end
     end
 
@@ -332,6 +409,9 @@ module RRRSpec
 
       def finish_rspec
         update_attributes(rspec_finished_at: Time.zone.now)
+      end
+
+      def finish
         log.flush
       end
 

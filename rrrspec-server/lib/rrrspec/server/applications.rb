@@ -35,6 +35,9 @@ module RRRSpec
       GlobalNotificator.instance.register_pubsub(em_hiredis)
       Taskset.after_create(&GlobalNotificator.instance.method(:taskset_created))
       Taskset.after_update(&GlobalNotificator.instance.method(:taskset_updated))
+
+      Worker.instance.register_pubsub(em_hiredis)
+      Taskset.after_update(&Worker.instance.method(:taskset_updated))
     end
 
     class WorkerApp

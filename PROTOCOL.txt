@@ -66,6 +66,7 @@ append_worker_log_log : WorkerLogRef -> String -> ()
 set_rsync_finished_time : WorkerLogRef -> ()
 set_setup_finished_time : WorkerLogRef -> ()
 set_rspec_finished_time : WorkerLogRef -> ()
+finish_worker_log : WorkerLogRef -> ()
 
 ## Slave
 
@@ -77,7 +78,7 @@ force_finish_slave : SlaveName -> Status -> ()
 # Worker
 
 assign_taskset : TasksetRef -> RSyncName -> SetupCommand -> SlaveCommand -> MaxTrials -> ()
-cancel_current_execution : () -> ()
+taskset_finished: TasksetRef -> ()
 query_taskset : () -> TasksetRef
 
 ------------
