@@ -67,7 +67,8 @@ module RRRSpec
       end
 
       def close(transport)
-        # Do nothing
+        @shutdown = true
+        EM.stop_event_loop
       end
 
       def work(transport)

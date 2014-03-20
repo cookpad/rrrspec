@@ -42,6 +42,7 @@ module RRRSpec
       @auto_reconnect = auto_reconnect
 
       if ws_or_url.is_a?(String)
+        @initial_connection = true
         @url = ws_or_url
         setup_websocket(Faye::WebSocket::Client.new(@url, nil, ping: PING_INTERVAL_SEC))
       else
@@ -54,6 +55,7 @@ module RRRSpec
       @ws = ws
 
       @ws.on(:open) do |event|
+        @initial_connection = false
         RRRSpec.logger.info("Connection opened: #{@ws}")
         Fiber.new do
           @handler.open(self)
@@ -73,7 +75,7 @@ module RRRSpec
 
       @ws.on(:close) do |event|
         RRRSpec.logger.info("Connection closed: #{@ws}")
-        if @url && @auto_reconnect
+        if @url && @auto_reconnect && @initial_connection
           sleep RETRY_INTERVAL_SEC
           setup_websocket(Faye::WebSocket::Client.new(@url, nil, ping: PING_INTERVAL_SEC))
         else

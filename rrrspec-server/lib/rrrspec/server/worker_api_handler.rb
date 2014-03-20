@@ -52,6 +52,7 @@ module RRRSpec
           @timer.cancel
           @timer = nil
         end
+        EM.stop_event_loop
       end
 
       def assign_taskset(transport, taskset_ref, rsync_name, setup_command, slave_command, max_trials)
