@@ -85,6 +85,7 @@ module RRRSpec
         end
       end
 
+      method_option :'worker-type', type: :string
       method_option :daemonize, type: :boolean
       method_option :pidfile, type: :string
       desc 'worker', 'Run RRRSpec as a worker'
@@ -93,7 +94,7 @@ module RRRSpec
         setup(WorkerConfiguration.new)
         daemonize
         auto_rebirth do
-          worker = Worker.create(RRRSpec.configuration.worker_type)
+          worker = Worker.create(options[:'worker-type'] || RRRSpec.configuration.worker_type)
           worker_runner = WorkerRunner.new(worker)
           Thread.abort_on_exception = true
           Thread.fork { RRRSpec.pacemaker(worker, 60, 5) }
