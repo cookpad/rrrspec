@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+
+require 'digest/sha1'
+require 'securerandom'
+require 'tempfile'
+require 'fileutils'
+
+require 'active_record'
+require 'faker'
+
+require 'rrrspec/server'
+
+redis_pid = Kernel.spawn("redis-server --port 9999 --save ''",
+                         in: '/dev/null', out: '/dev/null', err: '/dev/null')
+ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: "db/development.sqlite3")
+ActiveRecord::Migration.verbose = false
+ActiveRecord::Migrator.up "../rrrspec-server/db/migrate"
+ActiveRecord::Base.logger = Logger.new(STDERR)
+
+RRRSpec.config = RRRSpec::Server::MasterConfig.new
+FileUtils.mkdir_p('tmp/log_text')
+RRRSpec.config.execute_log_text_path = 'tmp/log_text'
+RRRSpec::Server.redis = Redis.new(url: 'redis://localhost:9999')
+
+taskset = RRRSpec::Server::Taskset.create(
+  rsync_name: 'testuser',
+  setup_command: 'bundle install',
+  slave_command: 'bundle exec rrrspec-slave',
+  worker_type: 'default',
+  max_workers: 8,
+  max_trials: 3,
+  taskset_class: 'default',
+  status: RRRSpec::Server::Taskset::STATUS_RSYNC_WAITING,
+)
+
+tasks = 1000.times.map do |i|
+  spec_path = File.join('spec', 'sample', i.to_s)
+  taskset.tasks.create(
+    spec_path: spec_path,
+    spec_sha1: Digest::SHA1.hexdigest(spec_path),
+    hard_timeout_sec: 60,
+    soft_timeout_sec: 30,
+  )
+end
+
+taskset.start_working
+
+worker_logs = 10.times.map do |i|
+  RRRSpec::Server::WorkerLog.create(worker_name: "worker-#{i}", taskset_id: taskset.id)
+end
+
+worker_logs.each do |worker_log|
+  worker_log.log.append(Faker::Lorem.paragraphs.join("\n"))
+  worker_log.finish_rsync
+  worker_log.finish_setup
+  worker_log.finish_rspec
+  worker_log.finish
+end
+
+slaves = []
+worker_logs.each do |worker_logs|
+  8.times do |i|
+    slaves << RRRSpec::Server::Slave.create(
+      name: "#{worker_logs.worker_name}:#{SecureRandom.uuid}",
+      taskset_id: taskset.id
+    )
+  end
+end
+
+queue = tasks.dup
+loop do
+  break if queue.empty?
+  slaves.each do |slave|
+    break if queue.empty?
+
+    task = queue.pop
+    next if task.finished?
+    trial = task.trials.create(slave_id: slave.id)
+    result = SecureRandom.random_number
+    case
+    when result < 0.005
+      # Error before start
+      trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"), nil, nil, nil)
+      queue.push(task)
+    when result < 0.010
+      # Error after start
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"), nil, nil, nil)
+      queue.push(task)
+    when result < 0.020
+      # Force finished
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, nil, nil, nil, nil, nil)
+      queue.push(task)
+    when result < 0.200
+      # Failed
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_FAILED, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
+                   SecureRandom.random_number(10), SecureRandom.random_number(10), SecureRandom.random_number(10)+1)
+      queue.push(task)
+    when result < 0.300
+      # Timeout
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_FAILED, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
+                   0, 0, 0)
+      queue.push(task)
+    when result < 0.600
+      # Pending
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_PENDING, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
+                   SecureRandom.random_number(10), SecureRandom.random_number(10)+1, 0)
+    else
+      # Passed
+      trial.start
+      trial.finish(RRRSpec::Server::Trial::STATUS_PASSED, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
+                   SecureRandom.random_number(10)+1, 0, 0)
+    end
+  end
+end
+
+slaves.each do |slave|
+  result = SecureRandom.random_number
+  case
+  when result < 0.2
+    slave.finish(RRRSpec::Server::Slave::STATUS_FAILURE_EXIT)
+  when result < 0.4
+    slave.finish(RRRSpec::Server::Slave::STATUS_TIMEOUT_EXIT)
+  when result < 0.6
+    slave.finish(RRRSpec::Server::Slave::STATUS_RUNNING)
+  else
+    slave.finish(RRRSpec::Server::Slave::STATUS_NORMAL_EXIT)
+  end
+end
+
+taskset.try_finish
+
+app = Rack::Cascade.new([RRRSpec::Web::API.new, RRRSpec::Web::App.new])
+RRRSpec::Server.master_after_fork_initialize
+Thin::Server.new('0.0.0.0', 8080, app).start

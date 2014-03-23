@@ -49,7 +49,6 @@ module RRRSpec
 
     class Taskset < ActiveRecord::Base
       STATUS_RSYNC_WAITING = 'rsync_waiting'
-      STATUS_WAITING = 'waiting'
       STATUS_RUNNING = 'running'
       STATUS_SUCCEEDED = 'succeeded'
       STATUS_FAILED = 'failed'
@@ -81,11 +80,11 @@ module RRRSpec
       end
 
       def self.dispatch_waiting
-        where(status: [STATUS_WAITING, STATUS_RUNNING])
+        where(status: STATUS_RUNNING)
       end
 
       def self.using
-        where(status: [STATUS_RSYNC_WAITING, STATUS_WAITING, STATUS_RUNNING])
+        where(status: [STATUS_RSYNC_WAITING, STATUS_RUNNING])
       end
 
       def self.is_running?(rsync_name)
@@ -118,7 +117,7 @@ module RRRSpec
 
       def start_working
         if status == STATUS_RSYNC_WAITING
-          update_attributes(status: STATUS_WAITING)
+          update_attributes(status: STATUS_RUNNING)
         end
       end
 
@@ -187,6 +186,8 @@ module RRRSpec
           status: [STATUS_PASSED, STATUS_PENDING],
           tasks: {spec_sha1: spec_sha1},
           tasksets: {taskset_class: taskset_class},
+        ).where.not(
+          started_at: nil, finished_at: nil,
         ).order(created_at: :desc).limit(AVERAGE_ROW_LIMIT).pluck(:started_at, :finished_at)
         durations = times.map do |started_at, finished_at|
           finished_at - started_at
@@ -219,6 +220,10 @@ module RRRSpec
         end
       end
 
+      def finished?
+        status.present?
+      end
+
       def enqueue
         TaskQueue.new(taskset_id).enqueue(self)
       end
@@ -231,7 +236,6 @@ module RRRSpec
         return true if status.present?
 
         statuses = trials.pluck(:status)
-        puts "id:#{id} #{statuses}"
         case
         when statuses.include?(Trial::STATUS_PASSED)
           update_attributes(status: STATUS_PASSED)
@@ -244,7 +248,6 @@ module RRRSpec
         else
           faileds = statuses.count { |status| [Trial::STATUS_FAILED, Trial::STATUS_ERROR, Trial::STATUS_TIMEOUT].include?(status) }
           if faileds >= max_trials
-            puts "mark failed"
             update_attributes(status: 'failed')
             true
           else
@@ -277,6 +280,10 @@ module RRRSpec
 
       def self.unfinished
         where(status: STATUS_UNFINISHED)
+      end
+
+      def start
+        update_attributes(started_at: Time.zone.now)
       end
 
       def finish(trial_status, stdout, stderr, passed_count, pending_count, failed_count)
@@ -457,8 +464,7 @@ module RRRSpec
       has_many :trials
 
       def finish(status)
-        update_attributes(status: status, finished_at: Time.zone.now)
-        log.flush
+        update_attributes(status: status)
       end
 
       def taskset_ref

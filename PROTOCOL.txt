@@ -20,7 +20,7 @@ MaxTrials : Int
 Task : (SpecPath, SpecSHA1, HardTimeoutSec, SoftTimeoutSec)
 SpecSHA1 : String
 AverageSec : Int
-TasksetStatus : ['rsync_waiting', 'waiting', 'running', 'succeeded', 'cancelled', 'failed']
+TasksetStatus : ['rsync_waiting', 'running', 'succeeded', 'cancelled', 'failed']
 TaskStatus : [nil, 'passed', 'pending', 'failed']
 TrialStatus : [nil, 'error', 'timeout', 'failed', 'pending', 'passed']
 

@@ -1,5 +1,3 @@
-//= require bootstrap
-
 taskIdFromTrialId = (trialId)->
   trialId.match(/^(.*):trial:/)[1]
 
@@ -30,7 +28,6 @@ class TasksetView extends Backbone.View
 
 class HeadView extends Backbone.View
   el: '.head'
-  template: Handlebars.compile($('#head-template').html())
 
   render: ->
     @$el.html(@template(@model.attributes))
@@ -131,7 +128,6 @@ class TaskListView extends Backbone.View
 class TaskView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item'
-  template: Handlebars.compile($('#tasklist-template').html())
 
   initialize: (options) ->
     @subviews = {}
@@ -174,7 +170,6 @@ class TaskView extends Backbone.View
 
 class TrialView extends Backbone.View
   className: 'panel'
-  template: Handlebars.compile($('#trial-template').html())
 
   render: ->
     @$el.html(@template(@model.attributes))
@@ -211,7 +206,6 @@ class WorkerLogListView extends Backbone.View
 class WorkerLogView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item hidden'
-  template: Handlebars.compile($('#worker-log-template').html())
 
   render: ->
     @$el.html(@template(@model.attributes))
@@ -255,7 +249,6 @@ class SlaveListView extends Backbone.View
 class SlaveView extends Backbone.View
   tagName: 'li'
   className: 'list-group-item hidden'
-  template: Handlebars.compile($('#slave-template').html())
 
   render: ->
     @$el.html(template(@model.attributes))
@@ -281,9 +274,17 @@ class SlaveView extends Backbone.View
   toggle: ->
     @$el.toggleClass('hidden')
 
+injectTemplate = ->
+  HeadView.template = Handlebars.compile($('#head-template').html())
+  TaskView.template = Handlebars.compile($('#task-template').html())
+  TrialView.template = Handlebars.compile($('#trial-template').html())
+  WorkerLogView.template = Handlebars.compile($('#worker-log-template').html())
+  SlaveView.template = Handlebars.compile($('#slave-template').html())
+
 $(->
+  injectTemplate()
   if document.URL.match(/\/tasksets\/(.*?)(#.*)?$/)
-    taskset = new Taskset({key: RegExp.$1})
+    taskset = new Taskset({id: RegExp.$1})
     taskset.fetch({
       success: (model, response, options) ->
         if model.isFull()
@@ -294,7 +295,7 @@ $(->
           # Force re-route
           fragment = Backbone.history.fragment
           router.navigate('')
-          router.navigate(fragment, { trigger: true })
+          router.navigate(fragment, {trigger: true})
         else
           $('#notfound-modal').modal({keyboard: false})
       error: (model, response, options) ->

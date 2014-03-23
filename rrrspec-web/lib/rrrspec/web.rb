@@ -1,13 +1,19 @@
+require 'sinatra/base'
 require 'active_record'
+require 'api-pagination'
+require 'bootstrap-sass'
+require 'coffee-script'
+require 'grape'
+require 'haml'
 require 'kaminari/grape'
 require 'rack'
+require 'sass'
+require 'sinatra/assetpack'
 
 require 'rrrspec'
 require 'rrrspec/server'
-require 'rrrspec/web/persistent_models'
 require 'rrrspec/web/api'
 require 'rrrspec/web/app'
-require 'rrrspec/web/configuration'
 
 module RRRSpec
   module Web

@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'thin'
+
+require 'rrrspec/web'
+
+ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: "db/development.sqlite3")
+
+app = Rack::Cascade.new([RRRSpec::Web::API.new, RRRSpec::Web::App.new])
+Thin::Server.new('0.0.0.0', 8080, app).start

@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "mysql2"
   spec.add_development_dependency "guard-livereload"
   spec.add_development_dependency "rack-livereload"
+  spec.add_development_dependency "faker"
   spec.add_dependency "activerecord", "~> 4.0.2"
   spec.add_dependency "activesupport"
   spec.add_dependency "api-pagination"

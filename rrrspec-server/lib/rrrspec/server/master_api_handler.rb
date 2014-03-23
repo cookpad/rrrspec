@@ -42,7 +42,7 @@ module RRRSpec
             max_workers: max_workers,
             max_trials: max_trials,
             taskset_class: taskset_class,
-            status: 'rsync_waiting',
+            status: Taskset::STATUS_RSYNC_WAITING,
           )
           tasks = tasks.map do |task_args|
             spec_path, spec_sha1, hard_timeout_sec, soft_timeout_sec = task_args
@@ -128,7 +128,7 @@ module RRRSpec
         end
 
         def start_trial(transport, trial_ref)
-          Trial.from_ref(trial_ref).update_attributes(started_at: Time.zone.now)
+          Trial.from_ref(trial_ref).start
           nil
         end
 
@@ -201,7 +201,7 @@ module RRRSpec
         def force_finish_slave(transport, slave_name, status)
           if slave = Slave.find_by_name(slave_name)
             slave.trials.unfinished.each do |trial|
-              trial.finish(Trial::STATUS_ERROR, nil, nil, 0, 0, 0)
+              trial.finish(Trial::STATUS_ERROR, nil, nil, nil, nil, nil)
             end
           end
           nil

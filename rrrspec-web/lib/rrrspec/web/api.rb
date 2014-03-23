@@ -1,6 +1,3 @@
-require 'grape'
-require 'api-pagination'
-
 module RRRSpec
   module Web
     class API < Grape::API

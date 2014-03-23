@@ -1,11 +1,3 @@
-require 'sinatra/base'
-
-require 'sass'
-require 'bootstrap-sass'
-require 'coffee-script'
-require 'haml'
-require 'sinatra/assetpack'
-
 module RRRSpec
   module Web
     class App < Sinatra::Base
