@@ -6,6 +6,7 @@ require 'tempfile'
 require 'fileutils'
 
 require 'active_record'
+require 'activerecord-import'
 require 'faker'
 
 require 'rrrspec/server'
@@ -32,22 +33,29 @@ taskset = RRRSpec::Server::Taskset.create(
   taskset_class: 'default',
   status: RRRSpec::Server::Taskset::STATUS_RSYNC_WAITING,
 )
+taskset.log.append(Faker::Lorem.paragraphs.join("\n"))
 
 tasks = 1000.times.map do |i|
   spec_path = File.join('spec', 'sample', i.to_s)
-  taskset.tasks.create(
+  RRRSpec::Server::Task.new(
+    taskset_id: taskset.id,
     spec_path: spec_path,
     spec_sha1: Digest::SHA1.hexdigest(spec_path),
     hard_timeout_sec: 60,
     soft_timeout_sec: 30,
   )
 end
+RRRSpec::Server::Task.import(tasks)
+tasks = taskset.tasks.to_a
+tasks.each { |task| taskset.queue.enqueue(task) }
 
 taskset.start_working
 
 worker_logs = 10.times.map do |i|
-  RRRSpec::Server::WorkerLog.create(worker_name: "worker-#{i}", taskset_id: taskset.id)
+  RRRSpec::Server::WorkerLog.new(worker_name: "worker-#{i}", taskset_id: taskset.id, started_at: Time.zone.now)
 end
+RRRSpec::Server::WorkerLog.import(worker_logs)
+worker_logs = RRRSpec::Server::WorkerLog.all
 
 worker_logs.each do |worker_log|
   worker_log.log.append(Faker::Lorem.paragraphs.join("\n"))
@@ -60,20 +68,21 @@ end
 slaves = []
 worker_logs.each do |worker_logs|
   8.times do |i|
-    slaves << RRRSpec::Server::Slave.create(
+    slaves << RRRSpec::Server::Slave.new(
       name: "#{worker_logs.worker_name}:#{SecureRandom.uuid}",
       taskset_id: taskset.id
     )
   end
 end
+RRRSpec::Server::Slave.import(slaves)
+slaves = RRRSpec::Server::Slave.all
 
-queue = tasks.dup
 loop do
-  break if queue.empty?
+  break if taskset.queue.empty?
   slaves.each do |slave|
-    break if queue.empty?
+    break if taskset.queue.empty?
 
-    task = queue.pop
+    task = taskset.queue.dequeue
     next if task.finished?
     trial = task.trials.create(slave_id: slave.id)
     result = SecureRandom.random_number
@@ -81,29 +90,24 @@ loop do
     when result < 0.005
       # Error before start
       trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"), nil, nil, nil)
-      queue.push(task)
     when result < 0.010
       # Error after start
       trial.start
       trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"), nil, nil, nil)
-      queue.push(task)
     when result < 0.020
       # Force finished
       trial.start
       trial.finish(RRRSpec::Server::Trial::STATUS_ERROR, nil, nil, nil, nil, nil)
-      queue.push(task)
     when result < 0.200
       # Failed
       trial.start
       trial.finish(RRRSpec::Server::Trial::STATUS_FAILED, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
                    SecureRandom.random_number(10), SecureRandom.random_number(10), SecureRandom.random_number(10)+1)
-      queue.push(task)
     when result < 0.300
       # Timeout
       trial.start
       trial.finish(RRRSpec::Server::Trial::STATUS_FAILED, Faker::Lorem.paragraphs.join("\n"), Faker::Lorem.paragraphs.join("\n"),
                    0, 0, 0)
-      queue.push(task)
     when result < 0.600
       # Pending
       trial.start
@@ -133,7 +137,3 @@ slaves.each do |slave|
 end
 
 taskset.try_finish
-
-app = Rack::Cascade.new([RRRSpec::Web::API.new, RRRSpec::Web::App.new])
-RRRSpec::Server.master_after_fork_initialize
-Thin::Server.new('0.0.0.0', 8080, app).start

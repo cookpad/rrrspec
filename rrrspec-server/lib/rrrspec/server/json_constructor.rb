@@ -5,40 +5,43 @@ module RRRSpec
         extend ActiveSupport::Concern
         include ActiveModel::Serializers::JSON
 
-        def as_nodetail_json
-          as_json(methods: :log)
+        def as_json_for_index
+          {
+            'id' => id,
+            'rsync_name' => rsync_name,
+            'setup_command' => setup_command,
+            'slave_command' => slave_command,
+            'worker_type' => worker_type,
+            'max_workers' => max_workers,
+            'max_trials' => max_trials,
+            'taskset_class' => taskset_class,
+            'created_at' => created_at,
+            'status' => status,
+            'finished_at' => finished_at,
+          }
         end
 
-        def as_short_json
-          h = as_json(methods: :log)
-          h['slaves'] = slaves.map { |slave| slave.as_json(only: :id) }
-          h['tasks'] = tasks.map { |task| task.as_json(only: :id) }
-          h['worker_logs'] = worker_logs.map { |worker_log| worker_log.as_json(only: :id) }
-          h
-        end
-
-        def as_full_json
-          h = as_json(methods: :log)
-          h['slaves'] = slaves.map(&:as_full_json)
-          h['tasks'] = tasks.map(&:as_full_json)
-          h['worker_logs'] = worker_logs.map(&:as_full_json)
-          h
+        def as_json_for_result_page
+          as_json_for_index.merge(
+            'tasks' => tasks.map(&:as_json_for_result_page),
+          )
         end
 
         def as_summary_json
-          h = Hash.new
-          h['status'] = status
-          h['created_at'] = created_at
-          h['finished_at'] = finished_at
-
           statuses = tasks.pluck(:status)
           groups = statuses.group_by { |status| status }
           groups.default = []
-          h['task_count'] = statuses.count
-          h['passed_count'] = groups[Task::STATUS_PASSED].size
-          h['pending_count'] = groups[Task::STATUS_PENDING].size
-          h['failed_count'] = groups[Task::STATUS_FAILED].size
-          h
+
+          {
+            'id' => id,
+            'status' => status,
+            'created_at' => created_at,
+            'finished_at' => finished_at,
+            'task_count' => statuses.count,
+            'passed_count' => groups[Task::STATUS_PASSED].size,
+            'pending_count' => groups[Task::STATUS_PENDING].size,
+            'failed_count' => groups[Task::STATUS_FAILED].size,
+          }
         end
       end
 
@@ -46,18 +49,17 @@ module RRRSpec
         extend ActiveSupport::Concern
         include ActiveModel::Serializers::JSON
 
-        def as_short_json
-          h = as_json(except: [:taskset_id, :trials],
-                      include: { 'taskset' => { only: :id} })
-          h['trials'] = trials.map { |trial| trial.as_json(only: :id) }
-          h
-        end
-
-        def as_full_json
-          h = as_json(except: [:taskset_id, :trials],
-                      include: { 'taskset' => { only: :id } })
-          h['trials'] = trials.map(&:as_full_json)
-          h
+        def as_json_for_result_page
+          {
+            'id' => id,
+            'taskset_id' => taskset_id,
+            'status' => status,
+            'spec_path' => spec_path,
+            'hard_timeout_sec' => hard_timeout_sec,
+            'soft_timeout_sec' => soft_timeout_sec,
+            'spec_sha1' => spec_sha1,
+            'trials' => trials.map(&:as_json_for_result_page)
+          }
         end
       end
 
@@ -65,14 +67,18 @@ module RRRSpec
         extend ActiveSupport::Concern
         include ActiveModel::Serializers::JSON
 
-        def as_short_json
-          as_full_json
-        end
-
-        def as_full_json
-          as_json(except: [:task_id, :slave_id],
-                  include: { 'slave' => { only: :id }, 'task' => { only: :id } },
-                  methods: [:stdout, :stderr])
+        def as_json_for_result_page
+          {
+            'id' => id,
+            'task_id' => task_id,
+            'slave_id' => slave_id,
+            'started_at' => started_at,
+            'finished_at' => finished_at,
+            'status' => status,
+            'passed' => passed,
+            'pending' => pending,
+            'failed' => failed,
+          }
         end
       end
 
@@ -80,18 +86,16 @@ module RRRSpec
         extend ActiveSupport::Concern
         include ActiveModel::Serializers::JSON
 
-        def as_short_json
-          as_full_json
-        end
-
-        def as_full_json
-          as_json(except: [:taskset_id, :worker_name],
-                  include: { 'taskset' => { only: :id } },
-                  methods: [:worker, :log])
-        end
-
-        def worker
-          { 'worker_name' => worker_name }
+        def as_json_for_result_page
+          {
+            'id' => id,
+            'worker_name' => worker_name,
+            'started_at' => started_at,
+            'rsync_finished_at' => rsync_finished_at,
+            'setup_finished_at' => setup_finished_at,
+            'rspec_finished_at' => rspec_finished_at,
+            'log' => log.to_s,
+          }
         end
       end
 
@@ -99,14 +103,13 @@ module RRRSpec
         extend ActiveSupport::Concern
         include ActiveModel::Serializers::JSON
 
-        def as_short_json
-          as_full_json
-        end
-
-        def as_full_json
-          as_json(except: [:taskset_id],
-                  include: { 'trials' => { only: :id } },
-                  methods: [:log])
+        def as_json_for_result_page
+          {
+            'id' => id,
+            'name' => name,
+            'status' => status,
+            'trials' => trials.map(&:id),
+          }
         end
       end
     end

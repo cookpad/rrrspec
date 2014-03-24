@@ -99,14 +99,6 @@ module RRRSpec
         includes(:slaves).where(slaves: {status: Slave::STATUS_FAILURE_EXIT})
       end
 
-      def self.full
-        includes(
-          :tasks => [{:trials => [:task, :slave]}, :taskset],
-          :slaves => [:trials],
-          :worker_logs => [:taskset]
-        )
-      end
-
       def self.users(rsync_name)
         where(rsync_name: rsync_name)
       end
@@ -136,6 +128,7 @@ module RRRSpec
       def finish(status)
         unless finished?
           update_attributes(status: status, finished_at: Time.zone.now)
+          log.flush
           queue.clear
         end
       end
@@ -286,16 +279,18 @@ module RRRSpec
         update_attributes(started_at: Time.zone.now)
       end
 
-      def finish(trial_status, stdout, stderr, passed_count, pending_count, failed_count)
+      def finish(trial_status, stdout_s, stderr_s, passed_count, pending_count, failed_count)
         update_attributes(
           finished_at: Time.zone.now,
           status: trial_status,
-          stdout: stdout,
-          stderr: stderr,
+          stdout: stdout_s,
+          stderr: stderr_s,
           passed: passed_count,
           pending: pending_count,
           failed: failed_count,
         )
+        stdout.flush
+        stderr.flush
         task.try_finish
       end
 

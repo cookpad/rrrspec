@@ -1,51 +1,57 @@
 module RRRSpec
   module Web
+    module OjFormatter
+      def self.call(object, env)
+        Oj.dump(object, mode: :compat, time_format: :ruby)
+      end
+    end
+
     class API < Grape::API
-      version 'v1', using: :path
+      version 'v2', using: :path
       format :json
+      formatter :json, OjFormatter
 
-      resource :tasksets do
-        desc "Return active tasksets"
-        get :actives do
-          RRRSpec::Server::Taskset.using
-        end
+      # For Index
 
-        desc "Return recently finished tasksets"
-        get :recents do
-          paginate(RRRSpec::Server::Taskset.recent).map(&:as_nodetail_json)
-        end
-
-        desc "Return tasksets that contains failure_exit slave"
-        get :failure_slaves do
-          paginate(RRRSpec::Server::Taskset.has_failed_slaves.recent).map(&:as_nodetail_json)
-        end
-
-        desc "Return a taskset."
-        params { requires :taskset_id, type: Integer, desc: "Taskset id." }
-        route_param :taskset_id do
-          get do
-            p_obj = RRRSpec::Server::Taskset.find(taskset_id).full.first
-            if p_obj
-              p_obj.as_full_json.update('is_full' => true)
-            else
-              error!('Not Found', 404)
-            end
-          end
-        end
+      get '/tasksets/actives' do
+        RRRSpec::Server::Taskset.using.map(&:as_json_for_index)
       end
 
-      namespace :batch do
-        resource :tasks do
-          desc "Return all tasks in the taskset"
-          params { requires :key, type: String, desc: "Taskset key." }
-          route_param :key do
-            get do
-              r_taskset = Taskset.new(params[:key])
-              error!('Not Found', 404) unless r_taskset.exist?
-              r_taskset.tasks.map(&:to_h)
-            end
-          end
-        end
+      get '/tasksets/recents' do
+        paginate(RRRSpec::Server::Taskset.recent).map(&:as_json_for_index)
+      end
+
+      # For Result Page
+
+      params { requires :taskset_id, type: Integer }
+      get '/tasksets/:taskset_id' do
+        RRRSpec::Server::Taskset.includes(tasks: :trials).find(params[:taskset_id]).as_json_for_result_page
+      end
+
+      params { requires :taskset_id, type: Integer }
+      get '/tasksets/:taskset_id/log' do
+        { 'log' => RRRSpec::Server::Taskset.find(params[:taskset_id]).log.to_s }
+      end
+
+      params { requires :task_id, type: Integer }
+      get '/tasks/:task_id/trials' do
+        RRRSpec::Server::Task.find(params[:task_id]).trials.map(&:as_json_for_result_page)
+      end
+
+      params { requires :trial_id, type: Integer }
+      get '/trials/:trial_id/outputs' do
+        trial = RRRSpec::Server::Trial.find(params[:trial_id])
+        { 'stdout' => trial.stdout.to_s, 'stderr' => trial.stderr.to_s }
+      end
+
+      params { requires :taskset_id, type: Integer }
+      get '/tasksets/:taskset_id/worker_logs' do
+        RRRSpec::Server::WorkerLog.where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)
+      end
+
+      params { requires :taskset_id, type: Integer }
+      get '/tasksets/:taskset_id/slaves' do
+        RRRSpec::Server::Slave.includes(:trials).where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)
       end
     end
   end

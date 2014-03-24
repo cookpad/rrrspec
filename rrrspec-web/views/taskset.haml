@@ -3,8 +3,8 @@
   %head
     %meta{charset: 'utf-8', 'http-equiv' => 'Content-Type', content: 'text/html'}
     %title Taskset - RRRSpec
-    != css :application
-    != js :tasksets
+    != stylesheet_tag 'application'
+    != javascript_tag 'tasksets'
   %body
     #notfound-modal.modal.fade
       .modal-dialog
@@ -46,10 +46,9 @@
 
       %script#head-template{type: 'text/template'}
         .panel-heading.clearfix
-          %h4.panel-title
-            %a.name{data: {toggle: 'collapse'}, href: '#taskset-info'} {{id}}
+          %h4.panel-title tasksets/{{id}}
           %span.label.status {{status}}
-        #taskset-info.panel-collapse.collapse
+        .taskset-info.panel-collapse.collapse
           .panel-body
             %dl.dl-horizontal
               %dt Status
@@ -76,7 +75,7 @@
             %pre.slave-command {{slave_command}}
 
             %h5 LOG
-            %pre.log.pre-scrollable {{log}}
+            %pre.log.pre-scrollable
 
       %script#task-template{type: 'text/template'}
         %ul.tasklist-item.header
@@ -87,7 +86,8 @@
       %script#trial-template{type: 'text/template'}
         %dl.dl-horizontal
           %dt Name
-          %dd trial/{{id}}
+          %dd
+            %a{href: "#trials/{{id}}"} trials/{{id}}
           %dt Status
           %dd {{status}}
           %dt Started
@@ -96,7 +96,7 @@
           %dd {{dateWithDuration finished_at started_at}}
           %dt Slave
           %dd
-            %a{href: "#slave/{{slave.id}}"} slave/{{slave.id}}
+            %a{href: "#slaves/{{slave_id}}"} slaves/{{slave_id}}
           %dt Passed
           %dd {{passed}}
           %dt Pending
@@ -105,16 +105,14 @@
           %dd {{failed}}
 
         %h5 STDOUT
-        %pre.log.pre-scrollable
-          {{stdout}}
-
+        %pre.stdout.log.pre-scrollable
         %h5 STDERR
-        %pre.log.pre-scrollable
-          {{stderr}}
+        %pre.stderr.log.pre-scrollable
 
 
       %script#worker-log-template{type: 'text/template'}
-        .header worker/{{id}}
+        .header
+          %a{href: "#worker_logs/{{id}}"} worker_logs/{{id}}
         .body.collapse
           %dl.dl-horizontal
             %dt Name
@@ -130,11 +128,11 @@
 
           %h5 LOG
           %pre.log.pre-scrollable
-            {{log}}
+            {{log_text}}
 
       %script#slave-template{type: 'text/template'}
         .header
-          slave/{{id}}
+          %a{href: "#slaves/{{id}}"} slaves/{{id}}
           .exit-status.pull-right
             {{status}}
         .body.collapse
@@ -142,9 +140,9 @@
           %ol
             {{#trials}}
             %li
-              %a{href: "#trial/{{id}}"} trial/{{id}}
+              %a{href: "#trials/{{id}}"} trials/{{id}}
             {{/trials}}
 
           %h5 LOG
           %pre.log.pre-scrollable
-            {{log}}
+            {{log_text}}

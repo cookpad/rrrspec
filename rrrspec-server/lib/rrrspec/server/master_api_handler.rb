@@ -46,13 +46,16 @@ module RRRSpec
           )
           tasks = tasks.map do |task_args|
             spec_path, spec_sha1, hard_timeout_sec, soft_timeout_sec = task_args
-            taskset.tasks.create(
+            Task.new(
+              taskset_id: taskset.id,
               spec_path: spec_path,
               spec_sha1: spec_sha1,
               hard_timeout_sec: hard_timeout_sec,
               soft_timeout_sec: soft_timeout_sec,
             )
           end
+          Task.import(tasks)
+          tasks = taskset.tasks.to_a
           tasks.sort_by { |task| [task.hard_timeout_sec, task.soft_timeout_sec] }.reverse_each do |task|
             taskset.queue.enqueue(task)
           end
@@ -155,7 +158,7 @@ module RRRSpec
 
       module WorkerLogQuery
         def create_worker_log(transport, worker_name, taskset_ref)
-          WorkerLog.create(worker_name: worker_name, taskset_id: taskset_ref[1]).to_ref
+          WorkerLog.create(worker_name: worker_name, taskset_id: taskset_ref[1], started_at: Time.zone.now).to_ref
         end
 
         def append_worker_log_log(transport, worker_log_ref, log)

@@ -63,7 +63,9 @@ body
 
   .head
     .panel-heading
-      .name
+      cursor: pointer
+
+      h4
         font-size: x-large
         overflow: hidden
         text-overflow: ellipsis
@@ -76,6 +78,17 @@ body
         width: 20%
         text-transform: uppercase
         float: left
+
+      .rsync_waiting
+        @extend .label-default
+      .running
+        @extend .label-primary
+      .succeeded
+        @extend .label-success
+      .cancelled
+        @extend .label-warning
+      .failed
+        @extend .label-danger
 
   .tasklist-list, .slaves-list, .worker-logs-list
     > *
@@ -97,18 +110,15 @@ body
       text-align: center
 
     .tasklist-header, .tasklist-item
-      list-style-type: none
-
-      li
-        display: inline-block
-
-      .taskstatus, .trial-count, .estimate-sec
+      .taskstatus
         width: 6em
         text-align: center
+        display: inline-block
 
       .file
         text-align: left
         text-overflow: ellipsis
+        display: inline-block
 
     .header
       cursor: pointer
