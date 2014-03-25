@@ -62,6 +62,7 @@ module RRRSpec
                 work(transport)
               end
             ensure
+              transport.sync_call(:finish_slave, @slave_ref, 'normal_exit')
               EM.stop_event_loop
             end
           end
@@ -109,7 +110,6 @@ module RRRSpec
         end
       ensure
         transport.send(:current_trial, @slave_ref, nil)
-        transport.send(:finish_slave, @slave_ref, 'normal_exit')
       end
     end
   end
