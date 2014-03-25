@@ -112,11 +112,9 @@
 
       %script#worker-log-template{type: 'text/template'}
         .header
-          %a{href: "#worker_logs/{{id}}"} worker_logs/{{id}}
+          %a{href: "#worker_logs/{{id}}"} {{worker_name}}
         .body.collapse
           %dl.dl-horizontal
-            %dt Name
-            %dd {{worker_name}}
             %dt Started
             %dd {{date started_at}}
             %dt RSync Finished
@@ -132,7 +130,7 @@
 
       %script#slave-template{type: 'text/template'}
         .header
-          %a{href: "#slaves/{{id}}"} slaves/{{id}}
+          %a{href: "#slaves/{{id}}"} {{name}}
           .exit-status.pull-right
             {{status}}
         .body.collapse
@@ -140,9 +138,5 @@
           %ol
             {{#trials}}
             %li
-              %a{href: "#trials/{{id}}"} trials/{{id}}
+              %a{href: "#trials/{{.}}"} trials/{{.}}
             {{/trials}}
-
-          %h5 LOG
-          %pre.log.pre-scrollable
-            {{log_text}}

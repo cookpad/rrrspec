@@ -228,15 +228,21 @@ $(->
     el: '.worker-logs'
 
     initialize: (options) ->
-      @showAllHeader = false
+      @shown = false
       @$('.panel-heading').click(=> @toggle())
-
+      router.on('route:worker_log', (workerLogId) =>
+        @show().done(=>
+          target = @subviews[workerLogId]
+          target.scrollIntoView()
+          target.showBody()
+        )
+      )
       @resetItems(@collection)
 
     resetItems: (collection) ->
       @collection = collection
       @$('.worker-logs-list').html('')
-      @subviews = []
+      @subviews = {}
       @listenTo(collection, "add", @appendItem)
       @listenTo(collection, "reset", @resetItems)
       for model in collection.models
@@ -244,28 +250,30 @@ $(->
 
     appendItem: (model) ->
       view = new WorkerLogView({model: model})
-      @subviews.push(view)
+      @subviews[model.attributes.id] = view
       view.render()
       @$('.worker-logs-list').append(view.$el)
 
     render: ->
-      for view in @subviews
+      for key, view in @subviews
         view.render()
 
     show: ->
-      unless @collection.fetched()
-        @collection.fetch({reset: true}).done(=>
-          @$('.worker-logs-list').collapse('show')
-        )
-      else
-        @$('.worker-logs-list').collapse('show')
+      @shown = true
+      (
+        unless @collection.fetched()
+          @collection.fetch({reset: true})
+        else
+          $.Defferred()
+      ).done(=> @$('.worker-logs-list').collapse('show'))
 
     hide: ->
+      @shown = false
       @$('.worker-logs-list').collapse('hide')
 
     toggle: ->
-      @showAllHeader = !@showAllHeader
-      if @showAllHeader
+      @shown = !@shown
+      if @shown
         @show()
       else
         @hide()
@@ -277,67 +285,89 @@ $(->
 
     render: ->
       @$el.html(@template(@model.attributes))
-      @$('.header').click(=> @$('.body').collapse('toggle'))
+      @$('.header').click(=>
+        router.navigate("worker_logs/#{@model.get('id')}")
+        @$('.body').collapse('toggle')
+      )
+
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
+
+    showBody: ->
+      @$('.body').collapse('show')
 
   class SlaveListView extends Backbone.View
     el: '.slaves'
 
     initialize: (options) ->
-      @subviews = {}
-      @$ul = @$('.slaves-list')
-      @$('.panel-heading').click(=>
-        for key, view of @subviews
-          view.toggle()
-      )
-      @listenTo(@collection, "add", @appendItem)
-      for obj in @collection.models
-        @appendItem(obj)
+      @shown = false
+      @$('.panel-heading').click(=> @toggle())
       router.on('route:slave', (slaveId) =>
-        for key, view of @subviews
-          view.show()
-        target = @subviews[slaveId]
-        target.scrollIntoView()
-        target.showBody()
+        @show().done(=>
+          target = @subviews[slaveId]
+          target.scrollIntoView()
+          target.showBody()
+        )
       )
+      @resetItems(@collection)
+
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.slaves-list').html('')
+      @subviews = {}
+      @listenTo(collection, "add", @appendItem)
+      @listenTo(collection, "reset", @resetItems)
+      for model in collection.models
+        @appendItem(model)
 
     appendItem: (model) ->
       view = new SlaveView({model: model})
-      @subviews[model.attributes.key] = view
+      @subviews[model.attributes.id] = view
       view.render()
-      @$ul.append(view.$el)
+      @$('.slaves-list').append(view.$el)
 
     render: ->
       for key, view of @subviews
         view.render()
 
+    show: ->
+      @shown = true
+      (
+        unless @collection.fetched()
+          @collection.fetch({reset: true})
+        else
+          $.Defferred()
+      ).done(=>
+        @$('.slaves-list').collapse('show')
+      )
+
+    hide: ->
+      @shown = false
+      @$('.slaves-list').collapse('hide')
+
+    toggle: ->
+      @shown = !@shown
+      if @shown
+        @show()
+      else
+        @hide()
+
   class SlaveView extends Backbone.View
     tagName: 'li'
-    className: 'list-group-item hidden'
+    className: 'list-group-item'
     template: Handlebars.compile($('#slave-template').html())
 
     render: ->
-      @$el.html(template(@model.attributes))
-      body = @$('.body')
-      @$('.header').click(-> body.collapse('toggle'))
-
-      switch @model.get('status')
-        when 'normal_exit' then @$el.addClass('normal')
-        when 'timeout_exit' then @$el.addClass('timeout')
-        when 'failure_exit' then @$el.addClass('failure')
-
-    scrollIntoView: ->
-      $('html, body').animate(
-        scrollTop: @$el.offset().top
+      @$el.html(@template(@model.attributes))
+      @$('.header').click(=>
+        router.navigate("slaves/#{@model.get('id')}")
+        @$('.body').collapse('toggle')
       )
+      @$el.addClass(@model.get('status'))
 
-    show: ->
-      @$el.removeClass('hidden')
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
     showBody: ->
       @$('.body').collapse('show')
-
-    toggle: ->
-      @$el.toggleClass('hidden')
 
   router = new TasksetRouter()
   Backbone.history.start()

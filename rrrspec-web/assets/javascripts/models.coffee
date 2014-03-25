@@ -1,12 +1,3 @@
-dateFormat = (date)->
-  if date
-    moment(date).format("YYYY-MM-DD HH:mm:ss z")
-  else
-    null
-
-dateDuration = (start, finish)->
-  moment.duration(moment(finish).diff(moment(start))).humanize()
-
 class @Taskset extends Backbone.Model
   url: -> "/v2/tasksets/#{@get('id')}"
 
@@ -129,15 +120,18 @@ class @Slaves extends Backbone.Collection
   url: -> "/v2/tasksets/#{@tasksetId}/slaves"
   parse: (obj, options) ->
     obj.map((slave) -> new Slave(slave, options))
+  fetched: -> !@isEmpty
 
 class @ActiveTasksets extends Backbone.Collection
   url: "/v2/tasksets/actives"
   parse: (obj, options) ->
     obj.map((taskset) -> new Taskset(taskset, options))
+  hasPages: false
 
 class @RecentTasksets extends Backbone.Collection
   currentPage: 1
   url: -> "/v2/tasksets/recents?page=#{@currentPage}"
+  hasPages: true
 
   fetchNextPage: ->
     @currentPage++
@@ -147,6 +141,8 @@ class @RecentTasksets extends Backbone.Collection
     if @currentPage != 1
       @currentPage--
     @fetch()
+
+  hasPrevious: -> @currentPage != 1
 
   parse: (obj, options) ->
     obj.map((taskset) -> new Taskset(taskset, options))
