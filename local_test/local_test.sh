@@ -20,10 +20,12 @@ trap "before_exit" EXIT
 mkdir -p vendor/cache
 cd ../rrrspec-client && bundle exec rake build && cp pkg/rrrspec-client-0.2.0.gem ../local_test/vendor/cache
 cd ../rrrspec-server && bundle exec rake build && cp pkg/rrrspec-server-0.2.0.gem ../local_test/vendor/cache
+cd ../rrrspec-web && bundle exec rake build && cp pkg/rrrspec-web-0.2.0.gem ../local_test/vendor/cache
 cd ../local_test
 
 rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-client-0.2.0.gemspec
 rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-server-0.2.0.gemspec
+rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-web-0.2.0.gemspec
 
 set -x
 export RACK_ENV=production

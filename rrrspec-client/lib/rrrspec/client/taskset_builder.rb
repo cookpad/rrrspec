@@ -47,6 +47,7 @@ module RRRSpec
         average_sec_list = @transport.sync_call(:query_spec_average_sec, taskset_class, spec_sha1_list)
 
         spec_sha1_list.size.times.map do |i|
+          spec_path = spec_files[i]
           average_sec = average_sec_list[i]
           spec_sha1 = spec_sha1_list[i]
 

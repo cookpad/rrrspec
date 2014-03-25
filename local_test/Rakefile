@@ -1,1 +1,6 @@
 load "#{Gem::Specification.find_by_name('rrrspec-server').gem_dir}/tasks/db.rake"
+require 'sinatra/asset_pipeline/task'
+require 'rrrspec/web'
+
+RRRSpec::Web::App.set(:assets_path, File.expand_path("../public", __FILE__))
+Sinatra::AssetPipeline::Task.define! RRRSpec::Web::App

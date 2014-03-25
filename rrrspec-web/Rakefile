@@ -1,2 +1,5 @@
 require "bundler/gem_tasks"
-load File.expand_path('../tasks/assets.rake', __FILE__)
+require 'sinatra/asset_pipeline/task'
+require 'rrrspec/web'
+
+Sinatra::AssetPipeline::Task.define! RRRSpec::Web::App
