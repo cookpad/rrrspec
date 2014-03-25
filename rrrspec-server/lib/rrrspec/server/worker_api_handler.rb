@@ -3,32 +3,23 @@ module RRRSpec
     module CommandExecutor
       def self.batch(logger, *cmd, **opts)
         execute(logger, *cmd, **opts).value
-      end
-
-      def self.async(logger, *cmd, **opts)
-        execute(logger, *cmd, **opts)
-      end
-
-      def self.execute(logger, *cmd, **opts)
         stdin_string = opts.delete(:stdin_text)
         stdin, stdout, stderr, wait_thr = Bundler.with_clean_env { Open3.popen3(*cmd, opts) }
         stdin.write(stdin_string) if stdin_string
         stdin.close
-        Thread.fork do
-          reads = [stdout, stderr]
-          loop do
-            break if reads.empty?
-            IO.select(reads)[0].each do |r|
-              line = r.gets
-              if line
-                logger.write("#{r == stdout ? "OUT" : "ERR"} #{line.strip}")
-              else
-                reads.delete(r)
-              end
+        reads = [stdout, stderr]
+        loop do
+          break if reads.empty?
+          IO.select(reads)[0].each do |r|
+            line = r.gets
+            if line
+              logger.write("#{r == stdout ? "OUT" : "ERR"} #{line.strip}")
+            else
+              reads.delete(r)
             end
           end
-          wait_thr.value
         end
+        wait_thr.value
       end
     end
 
