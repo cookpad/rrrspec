@@ -8,6 +8,7 @@ module RRRSpec
 
       def open(transport)
         send(@command, transport)
+        nil
       end
 
       def close(transport)
