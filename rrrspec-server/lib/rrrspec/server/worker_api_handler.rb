@@ -2,7 +2,6 @@ module RRRSpec
   module Server
     module CommandExecutor
       def self.batch(logger, *cmd, **opts)
-        execute(logger, *cmd, **opts).value
         stdin_string = opts.delete(:stdin_text)
         stdin, stdout, stderr, wait_thr = Bundler.with_clean_env { Open3.popen3(*cmd, opts) }
         stdin.write(stdin_string) if stdin_string
@@ -69,9 +68,9 @@ module RRRSpec
 
             [:rsync, :setup, :rspec].each do |action|
               logger.write("Start #{action}")
-              transport.send("set_#{action}_finished_time", worker_log_ref)
               if actions[action].call
                 logger.write("Finish #{action}")
+                transport.send("set_#{action}_finished_time", worker_log_ref)
               else
                 logger.write("Fail #{action}")
                 break

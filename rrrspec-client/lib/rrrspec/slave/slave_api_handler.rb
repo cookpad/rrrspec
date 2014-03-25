@@ -56,12 +56,14 @@ module RRRSpec
       def open(transport)
         if @slave_ref.blank?
           @slave_ref = transport.sync_call(:create_slave, RRRSpec.generate_slave_name, @taskset_ref)
-          begin
-            until @shutdown do
-              work(transport)
+          Thread.fork(transport.make_proxy) do |transport|
+            begin
+              until @shutdown do
+                work(transport)
+              end
+            ensure
+              EM.stop_event_loop
             end
-          ensure
-            EM.stop_event_loop
           end
         end
       end
