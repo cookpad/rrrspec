@@ -57,43 +57,47 @@ module RRRSpec
 
       def assign_taskset(transport, taskset_ref, rsync_name, setup_command, slave_command, max_trials)
         return nil if @current_taskset.present?
+        Thread.fork(transport.make_proxy) do |transport|
+          begin
+            worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec.generate_worker_name, taskset_ref)
+            logger = RPCLogger.new(transport, :append_worker_log_log, worker_log_ref)
 
-        worker_log_ref = transport.sync_call(:create_worker_log, RRRSpec.generate_worker_name, taskset_ref)
-        logger = RPCLogger.new(transport, :append_worker_log_log, worker_log_ref)
+            @current_taskset = taskset_ref
+            update_current_taskset(transport)
 
-        @current_taskset = taskset_ref
-        update_current_taskset(transport)
+            working_path = File.join(RRRSpec.config.working_dir, rsync_name)
 
-        working_path = File.join(RRRSpec.config.working_dir, rsync_name)
+            actions = {
+              rsync: -> { rsync(logger, working_path,
+                                RRRSpec.config.rsync_options,
+                                RRRSpec.config.rsync_remote_path,
+                                rsync_name) },
+              setup: -> { setup(logger, working_path, setup_command) },
+              rspec: -> { rspec(transport, logger, working_path, taskset_ref, slave_command, max_trials) },
+            }
 
-        actions = {
-          rsync: -> { rsync(logger, working_path,
-                            RRRSpec.config.rsync_options,
-                            RRRSpec.config.rsync_remote_path,
-                            rsync_name) },
-          setup: -> { setup(logger, working_path, setup_command) },
-          rspec: -> { rspec(transport, logger, working_path, taskset_ref, slave_command, max_trials) },
-        }
+            [:rsync, :setup, :rspec].each do |action|
+              logger.write("Start #{action}")
+              transport.send("set_#{action}_finished_time", worker_log_ref)
+              if actions[action].call
+                logger.write("Finish #{action}")
+              else
+                logger.write("Fail #{action}")
+                break
+              end
+              return nil if @shutdown
+            end
 
-        [:rsync, :setup, :rspec].each do |action|
-          logger.write("Start #{action}")
-          transport.send("set_#{action}_finished_time", worker_log_ref)
-          if actions[action].call
-            logger.write("Finish #{action}")
-          else
-            logger.write("Fail #{action}")
-            break
+            nil
+          ensure
+            @shutdown = false
+            @current_taskset = nil
+            update_current_taskset(transport)
+
+            transport.send(:finish_worker_log, worker_log_ref) if worker_log_ref
           end
-          return nil if @shutdown
         end
-
         nil
-      ensure
-        @shutdown = false
-        @current_taskset = nil
-        update_current_taskset(transport)
-
-        transport.send(:finish_worker_log, worker_log_ref) if worker_log_ref
       end
 
       def taskset_finished(transport, taskset_ref)

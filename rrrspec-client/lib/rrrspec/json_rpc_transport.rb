@@ -31,6 +31,23 @@ module RRRSpec
     end
   end
 
+  class WebSocketTransportProxy
+    def initialize(send_q, recv_q)
+      @send_q = send_q
+      @recv_q = recv_q
+    end
+
+    def send(method, *params)
+      @send_q.push([:send, method, params])
+      nil
+    end
+
+    def sync_call(method, *params)
+      @send_q.push([:sync_call, method, params])
+      @recv_q.pop
+    end
+  end
+
   class WebSocketTransport < JSONRPCTransport
     PING_INTERVAL_SEC = 15
     RETRY_INTERVAL_SEC = 1
@@ -84,6 +101,24 @@ module RRRSpec
           end.resume
         end
       end
+    end
+
+    def make_proxy
+      send_q = EM::Queue.new
+      recv_q = Queue.new
+      callback = Proc.new do |msg|
+        type, method, params = msg
+        if type == :send
+          send(method, *params)
+        else
+          Fiber.new do
+            recv_q.push(sync_call(method, *params))
+          end.resume
+        end
+        send_q.pop(&callback)
+      end
+      send_q.pop(&callback)
+      WebSocketTransportProxy.new(send_q, recv_q)
     end
 
     def rack_response

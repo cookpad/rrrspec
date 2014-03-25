@@ -1,5 +1,6 @@
-require 'logger'
 require 'fiber'
+require 'logger'
+require 'thread'
 
 require 'active_support'
 require 'active_support/core_ext'
