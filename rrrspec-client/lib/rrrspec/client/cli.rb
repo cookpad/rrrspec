@@ -132,6 +132,7 @@ module RRRSpec
         if @exit_if_taskset_finished && h['finished_at'].present?
           transport.close
         end
+        nil
       end
 
       def task_updated(transport, timestamp, task_ref, h)
@@ -139,6 +140,7 @@ module RRRSpec
           @finished_count += 1
           puts "#{@finished_count}/#{@task_count}"
         end
+        nil
       end
 
       def trial_created(transport, timestamp, trials_ref, task_ref, slave_ref, created_at)
