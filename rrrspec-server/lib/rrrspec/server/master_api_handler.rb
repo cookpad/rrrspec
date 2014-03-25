@@ -26,8 +26,10 @@ module RRRSpec
       end
 
       module SpecAverageSecQuery
-        def query_spec_average_sec(transport, taskset_class, spec_sha1)
-          Task.average(taskset_class, spec_sha1)
+        def query_spec_average_sec(transport, taskset_class, spec_sha1_list)
+          spec_sha1_list.map do |spec_sha1|
+            Task.average(taskset_class, spec_sha1)
+          end
         end
       end
 

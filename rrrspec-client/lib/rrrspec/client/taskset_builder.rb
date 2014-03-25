@@ -39,11 +39,17 @@ module RRRSpec
       private
 
       def task_argument
-        spec_files.map do |spec_path|
+        spec_sha1_list = spec_files.map do |spec_path|
           filepath = File.join(packaging_dir, spec_path)
           raise "Spec file not found: #{spec_path}" unless File.exists?(filepath)
-          spec_sha1 = Digest::SHA1.hexdigest(File.read(filepath, mode: 'rb'))
-          average_sec = @transport.sync_call(:query_spec_average_sec, taskset_class, spec_sha1)
+          Digest::SHA1.hexdigest(File.read(filepath, mode: 'rb'))
+        end
+        average_sec_list = @transport.sync_call(:query_spec_average_sec, taskset_class, spec_sha1_list)
+
+        spec_sha1_list.size.times.map do |i|
+          average_sec = average_sec_list[i]
+          spec_sha1 = spec_sha1_list[i]
+
           if average_sec == nil
             soft_timeout_sec = unknown_spec_timeout_sec
           elsif average_sec < least_timeout_sec
@@ -51,7 +57,6 @@ module RRRSpec
           else
             soft_timeout_sec = average_sec * average_multiplier
           end
-
           [spec_path, spec_sha1, soft_timeout_sec + hard_timeout_margin_sec, soft_timeout_sec]
         end
       end

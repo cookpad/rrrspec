@@ -89,6 +89,23 @@ module RRRSpec
         end
       end
 
+      def progress(transport)
+        taskset_id = ARGV[0]
+        if taskset_id
+          @exit_if_taskset_finished = true
+          @show_progress = true
+          @finished_count = 0
+          taskset_ref = [:taskset, taskset_id.to_i]
+          transport.sync_call(:listen_to_taskset, taskset_ref)
+
+          h = transport.sync_call(:query_taskset_summary, taskset_ref)
+          @task_count = h['task_count']
+          @finished_count += h['passed_count'] + h['pending_count'] + h['failed_count']
+        else
+          raise "Specify the taskset id"
+        end
+      end
+
       def show(transport)
         taskset_id = ARGV[0]
         if taskset_id
@@ -118,7 +135,10 @@ module RRRSpec
       end
 
       def task_updated(transport, timestamp, task_ref, h)
-        # Do nothing
+        if @show_progess && h['status'].present?
+          @finished_count += 1
+          puts "#{@finished_count}/#{@task_count}"
+        end
       end
 
       def trial_created(transport, timestamp, trials_ref, task_ref, slave_ref, created_at)
@@ -154,6 +174,7 @@ module RRRSpec
         'actives' => 'list up the active tasksets',
         'nodes' => 'list up the active nodes',
         'waitfor' => 'wait for the taskset',
+        'progress' => 'show the progress of the taskset',
         'show' => 'show the result of the taskset',
       }
 
@@ -216,6 +237,7 @@ module RRRSpec
         when 'actives'
         when 'nodes'
         when 'waitfor'
+        when 'progress'
         when 'show'
           OptionParser.new do |opts|
             opts.on('--failure-exit-code NUM', OptionParser::DecimalInteger) do |num|
