@@ -38,7 +38,7 @@ $(->
     template: Handlebars.compile($('#head-template').html())
 
     initialize: (options) ->
-      @shown = false
+      @showing = false
       router.on('route:taskset', => @show())
 
     render: ->
@@ -51,7 +51,7 @@ $(->
       )
 
     show: ->
-      @shown = true
+      @showing = true
       @$('.taskset-info').collapse('show')
       unless @model.outputFetched()
         @model.fetchOutput().done(=>
@@ -59,12 +59,12 @@ $(->
         )
 
     hide: ->
-      @shown = false
+      @showing = false
       @$('.taskset-info').collapse('hide')
 
     toggle: ->
-      @shown = !@shown
-      if @shown
+      @showing = !@showing
+      if @showing
         @show()
       else
         @hide()
@@ -111,20 +111,18 @@ $(->
     el: '.tasklist'
 
     initialize: (options) ->
-      @subviews = {}
-      @$ul = @$('.tasklist-list')
-      @showAllHeader = false
+      @showHeaders = false
       @$('.panel-heading').click(=>
-        @showAllHeader = !@showAllHeader
-        if @showAllHeader
+        @showHeaders = !@showHeaders
+        if @showHeaders
+          @$('.panel-heading').text("TASKS")
           for key, view of @subviews
             view.showHeader()
         else
+          @$('.panel-heading').text("FAILED TASKS")
           for key, view of @subviews
             view.hideHeaderIfSuccess()
       )
-      for model in @collection.models
-        @appendItem(model)
       router.on('route:task', (taskId) =>
         view = @subviews[taskId]
         view.showHeader()
@@ -139,12 +137,22 @@ $(->
             view.scrollIntoViewOfTrial(trialId)
             break
       )
+      @resetItems(@collection)
+
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.tasks-list').html('')
+      @subviews = {}
+      @listenTo(collection, "add", @appendItem)
+      @listenTo(collection, "reset", @resetItems)
+      for model in collection.models
+        @appendItem(model)
 
     appendItem: (model) ->
       view = new TaskView({model: model})
       @subviews[model.attributes.id] = view
       view.render()
-      @$ul.append(view.$el)
+      @$('.tasks-list').append(view.$el)
 
     render: ->
       for key, view in @subviews
@@ -158,6 +166,8 @@ $(->
     initialize: (options) ->
       @subviews = {}
       @bodyShowing = false
+
+    hasTrial: (trialId) -> !!@subviews[trialId]
 
     render: ->
       @$el.html(@template(@model.attributes))
@@ -201,8 +211,6 @@ $(->
       else
         @hideBody()
 
-    hasTrial: (trialId) -> !!@subviews[trialId]
-
     scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
     scrollIntoViewOfTrial: (trialId) ->
@@ -228,7 +236,7 @@ $(->
     el: '.worker-logs'
 
     initialize: (options) ->
-      @shown = false
+      @showHeaders = false
       @$('.panel-heading').click(=> @toggle())
       router.on('route:worker_log', (workerLogId) =>
         @show().done(=>
@@ -259,7 +267,7 @@ $(->
         view.render()
 
     show: ->
-      @shown = true
+      @showHeaders = true
       (
         unless @collection.fetched()
           @collection.fetch({reset: true})
@@ -268,12 +276,12 @@ $(->
       ).done(=> @$('.worker-logs-list').collapse('show'))
 
     hide: ->
-      @shown = false
+      @showHeaders = false
       @$('.worker-logs-list').collapse('hide')
 
     toggle: ->
-      @shown = !@shown
-      if @shown
+      @showHeaders = !@showHeaders
+      if @showHeaders
         @show()
       else
         @hide()
@@ -299,7 +307,7 @@ $(->
     el: '.slaves'
 
     initialize: (options) ->
-      @shown = false
+      @showHeaders = false
       @$('.panel-heading').click(=> @toggle())
       router.on('route:slave', (slaveId) =>
         @show().done(=>
@@ -330,7 +338,7 @@ $(->
         view.render()
 
     show: ->
-      @shown = true
+      @showHeaders = true
       (
         unless @collection.fetched()
           @collection.fetch({reset: true})
@@ -341,12 +349,12 @@ $(->
       )
 
     hide: ->
-      @shown = false
+      @showHeaders = false
       @$('.slaves-list').collapse('hide')
 
     toggle: ->
-      @shown = !@shown
-      if @shown
+      @showHeaders = !@showHeaders
+      if @showHeaders
         @show()
       else
         @hide()
