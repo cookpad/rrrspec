@@ -76,14 +76,15 @@ module RRRSpec
 
       # For Result Page
 
+      # Notice that this method takes taskset key.
       params { requires :taskset_key, type: String }
       get '/tasksets/:taskset_key' do
         RRRSpec::Server::Persistence::Taskset.includes(tasks: :trials).find_by_key(params[:taskset_key]).as_json_for_result_page
       end
 
-      params { requires :taskset_key, type: String }
-      get '/tasksets/:taskset_key/log' do
-        { 'log' => RRRSpec::Server::Persistence::Taskset.find_by_key(params[:taskset_key]).log.to_s }
+      params { requires :taskset_id, type: Integer }
+      get '/tasksets/:taskset_id/log' do
+        { 'log' => RRRSpec::Server::Persistence::Taskset.find(params[:taskset_id]).log.to_s }
       end
 
       params { requires :task_id, type: Integer }
@@ -97,13 +98,11 @@ module RRRSpec
         { 'stdout' => trial.stdout.to_s, 'stderr' => trial.stderr.to_s }
       end
 
-      # Notice that this method takes taskset id.
       params { requires :taskset_id, type: Integer }
       get '/tasksets/:taskset_id/worker_logs' do
         RRRSpec::Server::Persistence::WorkerLog.where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)
       end
 
-      # Notice that this method takes taskset id.
       params { requires :taskset_id, type: Integer }
       get '/tasksets/:taskset_id/slaves' do
         RRRSpec::Server::Persistence::Slave.includes(:trials).where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)

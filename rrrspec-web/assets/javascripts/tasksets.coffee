@@ -10,11 +10,11 @@
 $(->
   class TasksetRouter extends Backbone.Router
     routes:
-      'tasks/:task_key': 'task'
-      'trial/:trial_key': 'trial'
-      'slave/:slave_id': 'slave'
-
-  router = new TasksetRouter()
+      'taskset': 'taskset'
+      'tasks/:task_id': 'task'
+      'trials/:trial_id': 'trial'
+      'worker_logs/:worker_log_id': 'worker_log'
+      'slaves/:slave_id': 'slave'
 
   class TasksetView extends Backbone.View
     el: '.taskset'
@@ -37,9 +37,37 @@ $(->
     el: '.head'
     template: Handlebars.compile($('#head-template').html())
 
+    initialize: (options) ->
+      @showing = false
+      router.on('route:taskset', => @show())
+
     render: ->
-      @$el.html(@template(@model.forTemplate()))
+      @$el.html(@template(@model.attributes))
       @$('.panel-heading .status').addClass(@model.get('status'))
+
+      @$('.panel-title').click(=>
+        router.navigate("taskset")
+        @toggle()
+      )
+
+    show: ->
+      @showing = true
+      @$('.taskset-info').collapse('show')
+      unless @model.outputFetched()
+        @model.fetchOutput().done(=>
+          @$('.log').html(@model.get('log'))
+        )
+
+    hide: ->
+      @showing = false
+      @$('.taskset-info').collapse('hide')
+
+    toggle: ->
+      @showing = !@showing
+      if @showing
+        @show()
+      else
+        @hide()
 
   class ProgressBarView extends Backbone.View
     el: '.progressbars'
@@ -83,12 +111,7 @@ $(->
     el: '.tasks'
 
     initialize: (options) ->
-      @subviews = {}
-      @$ul = @$('.tasks-list')
       @showHeaders = false
-      for model in @collection.models
-        @appendItem(model)
-
       @$('.tasks-heading').click(=>
         @showHeaders = !@showHeaders
         if @showHeaders
@@ -100,26 +123,36 @@ $(->
           for key, view of @subviews
             view.hideHeaderIfSuccess()
       )
-      router.on('route:task', (taskKey) =>
-        view = @subviews[taskKey]
+      router.on('route:task', (taskId) =>
+        view = @subviews[taskId]
         view.showHeader()
         view.showBody()
         view.scrollIntoView()
       )
-      router.on('route:trial', (trialKey) =>
+      router.on('route:trial', (trialId) =>
         for key, view of @subviews
-          if view.hasTrial(trialKey)
+          if view.hasTrial(trialId)
             view.showHeader()
             view.showBody()
-            view.scrollIntoViewOfTrial(trialKey)
+            view.scrollIntoViewOfTrial(trialId)
             break
       )
+      @resetItems(@collection)
+
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.tasks-list').html('')
+      @subviews = {}
+      @listenTo(collection, "add", @appendItem)
+      @listenTo(collection, "reset", @resetItems)
+      for model in collection.models
+        @appendItem(model)
 
     appendItem: (model) ->
       view = new TaskView({model: model})
-      @subviews[model.attributes.key] = view
+      @subviews[model.attributes.id] = view
       view.render()
-      @$ul.append(view.$el)
+      @$('.tasks-list').append(view.$el)
 
     render: ->
       for key, view in @subviews
@@ -132,24 +165,24 @@ $(->
 
     initialize: (options) ->
       @subviews = {}
+      @bodyShowing = false
 
-    hasTrial: (trialKey) -> !!@subviews[trialKey]
+    hasTrial: (trialId) -> !!@subviews[trialId]
 
     render: ->
-      @$el.html(@template(@model.forTemplate()))
+      @$el.html(@template(@model.attributes))
       @$el.addClass(@model.get('status'))
       @hideHeaderIfSuccess()
       @$('.tasks-list-item-header').click(=>
-        router.navigate("tasks/#{encodeURIComponent(@model.get('key'))}")
+        router.navigate("tasks/#{@model.get('id')}")
         @toggleBody()
       )
-
       for trial in @model.get('trials')
         @appendTrial(trial)
 
     appendTrial: (trial) ->
       view = new TrialView({model: trial})
-      @subviews[trial.attributes.key] = view
+      @subviews[trial.attributes.id] = view
       view.render()
       @$('.trials').append(view.$el)
 
@@ -161,22 +194,41 @@ $(->
         @$el.addClass('hidden')
 
     showBody: ->
+      @bodyShowing = true
+      for key, view of @subviews
+        view.showBody()
       @$('.body').collapse('show')
+      @scrollIntoView()
+
+    hideBody: ->
+      @bodyShowing = false
+      @$('.body').collapse('hide')
 
     toggleBody: ->
-      @$('.body').collapse('toggle')
+      @bodyShowing = !@bodyShowing
+      if @bodyShowing
+        @showBody()
+      else
+        @hideBody()
 
     scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
-    scrollIntoViewOfTrial: (trialKey) ->
-      @subviews[trialKey].scrollIntoView()
+    scrollIntoViewOfTrial: (trialId) ->
+      @subviews[trialId].scrollIntoView()
 
   class TrialView extends Backbone.View
     className: 'panel'
     template: Handlebars.compile($('#trial-template').html())
 
     render: ->
-      @$el.html(@template(@model.forTemplate()))
+      @$el.html(@template(@model.attributes))
+
+    showBody: ->
+      unless @model.outputsFetched()
+        @model.fetchOutput().done(=>
+          @$('.stdout').html(@model.get('stdout'))
+          @$('.stderr').html(@model.get('stderr'))
+        )
 
     scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
@@ -184,113 +236,162 @@ $(->
     el: '.worker-logs'
 
     initialize: (options) ->
-      @subviews = []
-      @$ul = @$('.worker-logs-list')
-      @$('.worker-logs-heading').click(((subviews)-> ->
-        for view in subviews
-          view.toggle()
-      )(@subviews))
-      @listenTo(@collection, "add", @appendItem)
-      for obj in @collection.models
-        @appendItem(obj)
+      @showHeaders = false
+      @$('.worker-logs-heading').click(=> @toggle())
+      router.on('route:worker_log', (workerLogId) =>
+        @show().done(=>
+          target = @subviews[workerLogId]
+          target.scrollIntoView()
+          target.showBody()
+        )
+      )
+      @resetItems(@collection)
+
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.worker-logs-list').html('')
+      @subviews = {}
+      @listenTo(collection, "add", @appendItem)
+      @listenTo(collection, "reset", @resetItems)
+      for model in collection.models
+        @appendItem(model)
 
     appendItem: (model) ->
       view = new WorkerLogView({model: model})
-      @subviews.push(view)
+      @subviews[model.attributes.id] = view
       view.render()
-      @$ul.append(view.$el)
+      @$('.worker-logs-list').append(view.$el)
 
     render: ->
-      for view in @subviews
+      for key, view in @subviews
         view.render()
+
+    show: ->
+      @showHeaders = true
+      (
+        unless @collection.fetched()
+          @collection.fetch({reset: true})
+        else
+          $.Defferred()
+      ).done(=> @$('.worker-logs-list').collapse('show'))
+
+    hide: ->
+      @showHeaders = false
+      @$('.worker-logs-list').collapse('hide')
+
+    toggle: ->
+      @showHeaders = !@showHeaders
+      if @showHeaders
+        @show()
+      else
+        @hide()
 
   class WorkerLogView extends Backbone.View
     tagName: 'li'
-    className: 'list-group-item hidden'
+    className: 'list-group-item'
     template: Handlebars.compile($('#worker-log-template').html())
 
     render: ->
-      @$el.html(@template(@model.forTemplate()))
-      body = @$('.body')
-      @$('.worker-logs-list-item-header').click(-> body.collapse('toggle'))
+      @$el.html(@template(@model.attributes))
+      @$('.worker-logs-list-item-header').click(=>
+        router.navigate("worker_logs/#{@model.get('id')}")
+        @$('.body').collapse('toggle')
+      )
 
-    toggle: ->
-      @$el.toggleClass('hidden')
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
+
+    showBody: ->
+      @$('.body').collapse('show')
 
   class SlaveListView extends Backbone.View
     el: '.slaves'
 
     initialize: (options) ->
-      @subviews = {}
-      @$ul = @$('.slaves-list')
-      @$('.slaves-heading').click(=>
-        for key, view of @subviews
-          view.toggle()
-      )
-      @listenTo(@collection, "add", @appendItem)
-      for obj in @collection.models
-        @appendItem(obj)
+      @showHeaders = false
+      @$('.slaves-heading').click(=> @toggle())
       router.on('route:slave', (slaveId) =>
-        for key, view of @subviews
-          view.show()
-        target = @subviews[slaveId]
-        target.scrollIntoView()
-        target.showBody()
+        @show().done(=>
+          target = @subviews[slaveId]
+          target.scrollIntoView()
+          target.showBody()
+        )
       )
+      @resetItems(@collection)
+
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.slaves-list').html('')
+      @subviews = {}
+      @listenTo(collection, "add", @appendItem)
+      @listenTo(collection, "reset", @resetItems)
+      for model in collection.models
+        @appendItem(model)
 
     appendItem: (model) ->
       view = new SlaveView({model: model})
-      @subviews[model.attributes.key] = view
+      @subviews[model.attributes.id] = view
       view.render()
-      @$ul.append(view.$el)
+      @$('.slaves-list').append(view.$el)
 
     render: ->
       for key, view of @subviews
         view.render()
 
+    show: ->
+      @showHeaders = true
+      (
+        unless @collection.fetched()
+          @collection.fetch({reset: true})
+        else
+          $.Defferred()
+      ).done(=>
+        @$('.slaves-list').collapse('show')
+      )
+
+    hide: ->
+      @showHeaders = false
+      @$('.slaves-list').collapse('hide')
+
+    toggle: ->
+      @showHeaders = !@showHeaders
+      if @showHeaders
+        @show()
+      else
+        @hide()
+
   class SlaveView extends Backbone.View
     tagName: 'li'
-    className: 'list-group-item hidden'
+    className: 'list-group-item'
     template: Handlebars.compile($('#slave-template').html())
 
     render: ->
-      @$el.html(@template(@model.forTemplate()))
-      body = @$('.body')
-      @$('.slaves-list-item-header').click(-> body.collapse('toggle'))
-
+      @$el.html(@template(@model.attributes))
+      @$('.slaves-list-item-header').click(=>
+        router.navigate("slaves/#{@model.get('id')}")
+        @$('.body').collapse('toggle')
+      )
       @$el.addClass(@model.get('status'))
 
-    scrollIntoView: ->
-      $('html, body').animate(
-        scrollTop: @$el.offset().top
-      )
-
-    show: ->
-      @$el.removeClass('hidden')
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
     showBody: ->
       @$('.body').collapse('show')
 
-    toggle: ->
-      @$el.toggleClass('hidden')
-
+  router = new TasksetRouter()
   Backbone.history.start()
 
   if document.URL.match(/\/tasksets\/(.*?)(#.*)?$/)
     taskset = new Taskset({key: RegExp.$1})
     taskset.fetch({
       success: (model, response, options) ->
-        if model.isFull()
-          tasksetView = new TasksetView({model: model})
-          tasksetView.render()
-          tasksetView.$el.removeClass('hidden')
+        tasksetView = new TasksetView({model: model})
+        tasksetView.render()
+        tasksetView.$el.removeClass('hidden')
 
-          # Force re-route
-          fragment = Backbone.history.fragment
-          router.navigate('')
-          router.navigate(fragment, { trigger: true })
-        else
-          $('#notfound-modal').modal({keyboard: false})
+        # Force re-route
+        fragment = Backbone.history.fragment
+        router.navigate('')
+        router.navigate(fragment, {trigger: true})
       error: (model, response, options) ->
         $('#notfound-modal').modal({keyboard: false})
     })
