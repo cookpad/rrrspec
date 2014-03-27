@@ -43,11 +43,11 @@ module RRRSpec
           File.join(RRRSpec.configuration.execute_log_text_path, filename)
         end
 
-        let(:taskset_log_name)  { @taskset.key.gsub(/[\/:]/, '_') + "_log.log" }
-        let(:worker_log_name)   { @worker_log.key.gsub(/[\/:]/, '_') + "_worker_log.log" }
-        let(:slave_log_name)    { @slave.key.gsub(/[\/:]/, '_') + "_slave_log.log" }
-        let(:trial_stdout_name) { @trial.key.gsub(/[\/:]/, '_') + "_stdout.log" }
-        let(:trial_stderr_name) { @trial.key.gsub(/[\/:]/, '_') + "_stderr.log" }
+        let(:taskset_log_name)  { @taskset.key.gsub(/\//, '_').gsub(/:/, '/') + "_log.log" }
+        let(:worker_log_name)   { @worker_log.key.gsub(/\//, '_').gsub(/:/, '/') + "_worker_log.log" }
+        let(:slave_log_name)    { @slave.key.gsub(/\//, '_').gsub(/:/, '/') + "_slave_log.log" }
+        let(:trial_stdout_name) { @trial.key.gsub(/\//, '_').gsub(/:/, '/') + "_stdout.log" }
+        let(:trial_stderr_name) { @trial.key.gsub(/\//, '_').gsub(/:/, '/') + "_stderr.log" }
 
         def eq_json(actual, expected)
           expect(
@@ -99,9 +99,6 @@ module RRRSpec
         it 'creates log text files' do
           Persister.persist(@taskset)
 
-          expect(Dir.foreach(RRRSpec.configuration.execute_log_text_path).to_a).to match_array([
-            '.', '..', taskset_log_name, worker_log_name, slave_log_name, trial_stdout_name, trial_stderr_name,
-          ])
           expect(File.read(log_path_of(taskset_log_name))).to eq(@taskset.log)
           expect(File.read(log_path_of(worker_log_name))).to eq(@worker_log.log)
           expect(File.read(log_path_of(slave_log_name))).to eq(@slave.log)
