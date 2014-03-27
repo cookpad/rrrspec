@@ -43,9 +43,10 @@ $(->
 
   class HeadView extends Backbone.View
     el: '.head'
+    template: Handlebars.compile($('#head-template').html())
 
     render: ->
-      @$el.html(Handlebars.compile($('#head-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
       @$('.panel-heading .status').addClass(
         switch @model.get('status')
           when 'running' then 'label-active'
@@ -143,11 +144,12 @@ $(->
   class TaskView extends Backbone.View
     tagName: 'li'
     className: 'list-group-item'
+    template: Handlebars.compile($('#tasklist-template').html())
 
     initialize: (options) ->
       @subviews = {}
     render: ->
-      @$el.html(Handlebars.compile($('#tasklist-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
       @$('.header').click(-> body.collapse('toggle'))
       switch @model.get('status')
@@ -185,9 +187,10 @@ $(->
 
   class TrialView extends Backbone.View
     className: 'panel'
+    template: Handlebars.compile($('#trial-template').html())
 
     render: ->
-      @$el.html(Handlebars.compile($('#trial-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
 
     scrollIntoView: ->
       $('html, body').animate(
@@ -221,9 +224,10 @@ $(->
   class WorkerLogView extends Backbone.View
     tagName: 'li'
     className: 'list-group-item hidden'
+    template: Handlebars.compile($('#worker-log-template').html())
 
     render: ->
-      @$el.html(Handlebars.compile($('#worker-log-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
       @$('.header').click(-> body.collapse('toggle'))
 
@@ -264,9 +268,10 @@ $(->
   class SlaveView extends Backbone.View
     tagName: 'li'
     className: 'list-group-item hidden'
+    template: Handlebars.compile($('#slave-template').html())
 
     render: ->
-      @$el.html(Handlebars.compile($('#slave-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
       @$('.header').click(-> body.collapse('toggle'))
 

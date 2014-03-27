@@ -38,9 +38,10 @@ $(->
   class TasksetView extends Backbone.View
     tagName: 'li'
     className: 'list-group-item'
+    template: Handlebars.compile($('#taskset-template').html())
 
     render: ->
-      @$el.html(Handlebars.compile($('#taskset-template').html())(@model.forTemplate()))
+      @$el.html(@template(@model.forTemplate()))
 
   actives = new ActiveTasksets()
   actives.fetch()
