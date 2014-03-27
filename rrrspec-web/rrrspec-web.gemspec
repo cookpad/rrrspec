@@ -44,4 +44,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "sass"
   spec.add_dependency "sinatra", "~> 1.4.3"
   spec.add_dependency "sinatra-assetpack"
+  spec.add_dependency "oj"
 end
