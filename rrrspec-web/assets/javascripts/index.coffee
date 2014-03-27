@@ -1,3 +1,11 @@
+#= require vendor/jquery-1.10.2
+#= require vendor/mustache
+#= require vendor/moment.min
+#= require vendor/underscore
+#= require vendor/backbone
+#= require bootstrap
+#= require models
+
 class TasksetsView extends Backbone.View
   initialize: (options) ->
     @subviews = []
