@@ -1,5 +1,5 @@
 #= require vendor/jquery-1.10.2
-#= require vendor/mustache
+#= require vendor/handlebars-v1.3.0
 #= require vendor/moment.min
 #= require vendor/underscore
 #= require vendor/backbone
@@ -44,7 +44,7 @@ class HeadView extends Backbone.View
   el: '.head'
 
   render: ->
-    @$el.html(Mustache.render($('#head-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#head-template').html())(@model.forTemplate()))
     @$('.panel-heading .status').addClass(
       switch @model.get('status')
         when 'running' then 'label-active'
@@ -146,7 +146,7 @@ class TaskView extends Backbone.View
   initialize: (options) ->
     @subviews = {}
   render: ->
-    @$el.html(Mustache.render($('#tasklist-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#tasklist-template').html())(@model.forTemplate()))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
     switch @model.get('status')
@@ -186,7 +186,7 @@ class TrialView extends Backbone.View
   className: 'panel'
 
   render: ->
-    @$el.html(Mustache.render($('#trial-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#trial-template').html())(@model.forTemplate()))
 
   scrollIntoView: ->
     $('html, body').animate(
@@ -222,7 +222,7 @@ class WorkerLogView extends Backbone.View
   className: 'list-group-item hidden'
 
   render: ->
-    @$el.html(Mustache.render($('#worker-log-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#worker-log-template').html())(@model.forTemplate()))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
 
@@ -265,7 +265,7 @@ class SlaveView extends Backbone.View
   className: 'list-group-item hidden'
 
   render: ->
-    @$el.html(Mustache.render($('#slave-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#slave-template').html())(@model.forTemplate()))
     body = @$('.body')
     @$('.header').click(-> body.collapse('toggle'))
 

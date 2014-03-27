@@ -1,5 +1,5 @@
 #= require vendor/jquery-1.10.2
-#= require vendor/mustache
+#= require vendor/handlebars-v1.3.0
 #= require vendor/moment.min
 #= require vendor/underscore
 #= require vendor/backbone
@@ -39,7 +39,7 @@ class TasksetView extends Backbone.View
   className: 'list-group-item'
 
   render: ->
-    @$el.html(Mustache.render($('#taskset-template').html(), @model.forTemplate()))
+    @$el.html(Handlebars.compile($('#taskset-template').html())(@model.forTemplate()))
 
 $(->
   actives = new ActiveTasksets()
