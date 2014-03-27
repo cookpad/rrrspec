@@ -12,19 +12,22 @@ $(->
     initialize: (options) ->
       @subviews = []
       @listenTo(@collection, "add", @appendItem)
-      @$('.previous').click(=>
-        @$('.tasksets').empty()
-        @subviews = []
-        @collection.fetchPreviousPage(success: -> @render)
-      )
-      @$('.next').click(=>
-        @$('.tasksets').empty()
-        @subviews = []
-        @collection.fetchNextPage(success: -> @render)
-      )
-      @render()
-      for obj in @collection.models
-        @appendItem(obj)
+      @listenTo(@collection, "reset", @resetItems)
+      if @collection.hasPages
+        @$('.previous').click(=>
+          if @collection.hasPrevious()
+            @$('.tasksets').empty()
+            @subviews = []
+            @collection.fetchPreviousPage(success: -> @render)
+          @updatePager()
+        )
+        @$('.next').click(=>
+          @$('.tasksets').empty()
+          @subviews = []
+          @collection.fetchNextPage(success: -> @render)
+          @updatePager()
+        )
+      @resetItems(@collection)
 
     appendItem: (model) ->
       view = new TasksetView({model: model})
@@ -32,9 +35,25 @@ $(->
       view.render()
       @$('.tasksets').append(view.$el)
 
+    resetItems: (collection) ->
+      @collection = collection
+      @$('.tasksets').empty()
+      @subviews = []
+      for model in collection.models
+        @appendItem(model)
+
     render: ->
       for view in @subviews
         view.render()
+      @updatePager()
+
+    updatePager: ->
+      if @collection.hasPages
+        @$('.pagenum').text("Page #{@collection.currentPage}")
+        if @collection.hasPrevious()
+          @$('.previous').removeClass('disabled')
+        else
+          @$('.previous').addClass('disabled')
 
   class TasksetView extends Backbone.View
     tagName: 'li'
@@ -42,7 +61,7 @@ $(->
     template: Handlebars.compile($('#taskset-template').html())
 
     render: ->
-      @$el.html(@template(@model.forTemplate()))
+      @$el.html(@template(@model.attributes))
 
   actives = new ActiveTasksets()
   actives.fetch()
@@ -52,10 +71,5 @@ $(->
   recents = new RecentTasksets()
   recents.fetch()
   recentsView = new TasksetsView({collection: recents, el: '.recent-tasksets'})
-  recentsView.render()
-
-  slave_failed = new SlaveFailedTasksets()
-  slave_failed .fetch()
-  recentsView = new TasksetsView({collection: slave_failed, el: '.slave-failed-tasksets'})
   recentsView.render()
 )

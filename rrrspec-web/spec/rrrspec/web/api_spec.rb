@@ -265,9 +265,9 @@ module RRRSpec
         end
       end
 
-      describe 'GET /v2/tasksets/:taskset_key/log' do
+      describe 'GET /v2/tasksets/:taskset_id/log' do
         it 'returns a string in JSON' do
-          get "/v2/tasksets/#{taskset.key}/log"
+          get "/v2/tasksets/1/log"
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body)).to eq({
             'log' => 'taskset log body',
