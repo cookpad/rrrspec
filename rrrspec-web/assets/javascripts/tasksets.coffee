@@ -54,52 +54,40 @@ $(->
   class ProgressBarView extends Backbone.View
     el: '.progressbars'
 
-    render: ->
-      tasks = @model.get('tasks')
+    showBar: (bar, percentage, text) ->
+      if percentage == 0
+        bar.attr('style', 'width: 0%')
+        bar.text('')
+      else
+        bar.attr('style', "width: #{100*percentage}%")
+        bar.text(text)
+    hideBar: (bar) -> @showBar(bar, 0, '')
+
+    renderSpecBar: (tasks) ->
       if @model.isFinished()
         @$('.spec-progress').removeClass('progress-striped active')
-        @$('.spec-progress-bar').attr('style', 'width: 0%')
-        @$('.spec-progress-bar').text('')
-        if tasks.numPassedTask > 0
-          @$('.passed-spec-bar').attr('style', "width: #{100*tasks.numPassedTask/tasks.numTask}%")
-          @$('.passed-spec-bar').text(tasks.numPassedTask)
-        if tasks.numPendingTask > 0
-          @$('.pending-spec-bar').attr('style', "width: #{100*tasks.numPendingTask/tasks.numTask}%")
-          @$('.pending-spec-bar').text(tasks.numPendingTask)
-        if tasks.numFailedTask > 0
-          @$('.failed-spec-bar').attr('style', "width: #{100*tasks.numFailedTask/tasks.numTask}%")
-          @$('.failed-spec-bar').text(tasks.numFailedTask)
+        @hideBar(@$('.spec-progress-bar'))
+        @showBar(@$('.passed-spec-bar'), tasks.numPassedTask/tasks.numTask, tasks.numPassedTask)
+        @showBar(@$('.pending-spec-bar'), tasks.numPendingTask/tasks.numTask, tasks.numPendingTask)
+        @showBar(@$('.failed-spec-bar'), tasks.numFailedTask/tasks.numTask, tasks.numFailedTask)
       else
         numFinishedTask = tasks.numPassedTask + tasks.numPendingTask + tasks.numFailedTask
-        percentage = 100*numFinishedTask/tasks.numTask
+        percentage = numFinishedTask/tasks.numTask
         @$('.spec-progress').addClass('progress-striped active')
-        @$('.spec-progress-bar').attr('style', "width: #{percentage}%")
-        @$('.spec-progress-bar').text("#{numFinishedTask}/#{tasks.numTask}(#{percentage}%)")
-        @$('.passed-spec-bar').attr('style', 'width: 0%')
-        @$('.passed-spec-bar').text('')
-        @$('.pending-spec-bar').attr('style', 'width: 0%')
-        @$('.pending-spec-bar').text('')
-        @$('.failed-spec-bar').attr('style', 'width: 0%')
-        @$('.failed-spec-bar').text('')
+        @showBar(@$('.spec-progress-bar'), percentage, "#{numFinishedTask}/#{tasks.numTask} (#{100*percentage}%)")
+        @hideBar(@$('.passed-spec-bar'))
+        @hideBar(@$('.pending-spec-bar'))
+        @hideBar(@$('.failed-spec-bar'))
 
-      if tasks.numPassedExample > 0
-        @$('.passed-example-bar').attr('style', "width: #{100*tasks.numPassedExample/tasks.numExample}%")
-        @$('.passed-example-bar').text(tasks.numPassedExample)
-      else
-        @$('.passed-example-bar').attr('style', "width: 0%")
-        @$('.passed-example-bar').text('')
-      if tasks.numPendingExample > 0
-        @$('.pending-example-bar').attr('style', "width: #{100*tasks.numPendingExample/tasks.numExample}%")
-        @$('.pending-example-bar').text(tasks.numPendingExample)
-      else
-        @$('.pending-example-bar').attr('style', "width: 0%")
-        @$('.pending-example-bar').text('')
-      if tasks.numFailedExample > 0
-        @$('.failed-example-bar').attr('style', "width: #{100*tasks.numFailedExample/tasks.numExample}%")
-        @$('.failed-example-bar').text(tasks.numFailedExample)
-      else
-        @$('.failed-example-bar').attr('style', "width: 0%")
-        @$('.failed-example-bar').text('')
+    renderExampleBar: (tasks) ->
+      @showBar(@$('.passed-example-bar'), tasks.numPassedExample/tasks.numExample, tasks.numPassedExample)
+      @showBar(@$('.pending-example-bar'), tasks.numPendingExample/tasks.numExample, tasks.numPendingExample)
+      @showBar(@$('.failed-example-bar'), tasks.numFailedExample/tasks.numExample, tasks.numFailedExample)
+
+    render: ->
+      tasks = @model.get('tasks')
+      @renderSpecBar(tasks)
+      @renderExampleBar(tasks)
 
   class TaskListView extends Backbone.View
     el: '.tasklist'
