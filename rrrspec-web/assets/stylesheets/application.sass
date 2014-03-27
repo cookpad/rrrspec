@@ -3,8 +3,11 @@
 body
   padding-top: 20px
 
+dl
+  @extend .dl-horizontal
 
 .log
+  @extend .pre-scrollable
   word-wrap: normal
   white-space: pre
   overflow-x: scroll
@@ -25,6 +28,26 @@ body
     padding-right: 2em
 
 .taskset
+  @extend .container
+
+  .head, .tasks, .worker-logs, .slaves
+    @extend .panel
+    @extend .panel-default
+
+    > .panel-heading
+      cursor: pointer
+      font-size: large
+      &:hover
+        color: darken(#428bca, 15%)
+        border-color: #428bca
+
+  .tasks-list, .worker-logs-list, .slaves-list
+    > *
+      padding: 0
+
+    .list-group-item > *
+      padding: 10px 15px
+
   .head
     .panel-heading
       .name
@@ -41,26 +64,49 @@ body
         text-transform: uppercase
         float: left
 
-  .tasklist-list, .slaves-list, .worker-logs-list
-    > *
-      padding: 0
+      .running
+        @extend .label-primary
+      .succeeded
+        @extend .label-success
+      .cancelled
+        @extend .label-warning
+      .failed
+        @extend .label-danger
 
-    .list-group-item > *
-      padding: 10px 15px
+  .progressbars
+    .spec-progress
+      @extend .progress
+      .spec-progress-bar
+        @extend .progress-bar
+      .passed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
+    .example-progress
+      @extend .progress
+      .passed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
 
-  .tasklist, .worker-logs, .slaves
-    > .panel-heading
-      cursor: pointer
-      font-size: large
-      &:hover
-        color: darken(#428bca, 15%)
-        border-color: #428bca
+  .tasks
+    .tasks-heading
+      @extend .panel-heading
 
-  .tasklist
-    .taskstatus
-      text-align: center
+    .tasks-list
+      @extend .list-group
 
-    .tasklist-header, .tasklist-item
+    .tasks-list-header, .tasks-list-item-header
       list-style-type: none
 
       li
@@ -70,57 +116,73 @@ body
         width: 6em
         text-align: center
 
+      .trial-count, .estimate-sec
+        @extend .pull-right
+
       .file
         text-align: left
         text-overflow: ellipsis
 
-    .header
+    .tasks-list-item-header
       cursor: pointer
 
-    .running .header
+    .running .tasks-list-item-header
       background-color: #f5f5f5
       &:hover
         background-color: darken(#f5f5f5, 20%)
-    .passed .header
+    .passed .tasks-list-item-header
       background-color: #dff0d8
       &:hover
         background-color: darken(#dff0d8, 20%)
-    .pending .header
+    .pending .tasks-list-item-header
       background-color: #fcf8e3
       &:hover
         background-color: darken(#fcf8e3, 20%)
-    .failed .header
+    .failed .tasks-list-item-header
       background-color: #f2dede
       &:hover
         background-color: darken(#f2dede, 20%)
 
-    .tasklist-item
+    .tasks-list-item-header
       .taskstatus
         text-transform: uppercase
 
-  .worker-logs
-    .header
-      cursor: pointer
+  .trials-list-heading
+    @extend .panel-heading
 
+  .worker-logs
+    .worker-logs-heading
+      @extend .panel-heading
+
+    .worker-logs-list
+      @extend .list-group
+
+    .worker-logs-list-item-header
+      cursor: pointer
       &:hover
         color: darken(#428bca, 15%)
         text-decoration: underline
 
   .slaves
-    .exit-status
-      text-transform: uppercase
+    .slaves-heading
+      @extend .panel-heading
 
-    .header
+    .slaves-list
+      @extend .list-group
+
+    .slaves-list-item-header
       cursor: pointer
-
       &:hover
         color: darken(#428bca, 15%)
         text-decoration: underline
 
-    .normal .header
-      background-color: #dff0d8
-    .timeout .header
-      background-color: #fcf8e3
-    .failure .header
-      background-color: #f2dede
+    .exit-status
+      @extend .pull-right
+      text-transform: uppercase
 
+    .normal_exit .slaves-list-item-header
+      background-color: #dff0d8
+    .timeout_exit .slaves-list-item-header
+      background-color: #fcf8e3
+    .failure_exit .slaves-list-item-header
+      background-color: #f2dede
