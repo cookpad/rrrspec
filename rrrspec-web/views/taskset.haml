@@ -3,8 +3,8 @@
   %head
     %meta{charset: 'utf-8', 'http-equiv' => 'Content-Type', content: 'text/html'}
     %title Taskset - RRRSpec
-    != css :application
-    != js :tasksets
+    != stylesheet_tag 'application'
+    != javascript_tag 'tasksets'
   %body
     #notfound-modal.modal.fade
       .modal-dialog

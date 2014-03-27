@@ -1,3 +1,10 @@
+#= require vendor/jquery-1.10.2
+#= require vendor/mustache
+#= require vendor/moment.min
+#= require vendor/underscore
+#= require vendor/backbone
+#= require bootstrap
+#= require models
 
 dateFormat = (date)->
   moment(date).format("YYYY-MM-DD HH:mm:ss z")
