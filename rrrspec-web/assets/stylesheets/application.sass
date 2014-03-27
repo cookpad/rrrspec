@@ -64,6 +64,15 @@ dl
         text-transform: uppercase
         float: left
 
+      .running
+        @extend .label-primary
+      .succeeded
+        @extend .label-success
+      .cancelled
+        @extend .label-warning
+      .failed
+        @extend .label-danger
+
   .progressbars
     .spec-progress
       @extend .progress
@@ -155,9 +164,9 @@ dl
         color: darken(#428bca, 15%)
         text-decoration: underline
 
-    .normal .header
+    .normal_exit .header
       background-color: #dff0d8
-    .timeout .header
+    .timeout_exit .header
       background-color: #fcf8e3
-    .failure .header
+    .failure_exit .header
       background-color: #f2dede

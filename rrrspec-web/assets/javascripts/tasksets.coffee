@@ -42,14 +42,7 @@ $(->
 
     render: ->
       @$el.html(@template(@model.forTemplate()))
-      @$('.panel-heading .status').addClass(
-        switch @model.get('status')
-          when 'running' then 'label-active'
-          when 'succeeded' then 'label-success'
-          when 'cancelled' then 'label-warning'
-          when 'failed' then 'label-danger'
-          else ''
-      )
+      @$('.panel-heading .status').addClass(@model.get('status'))
 
   class ProgressBarView extends Backbone.View
     el: '.progressbars'
@@ -135,11 +128,7 @@ $(->
       @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
       @$('.header').click(-> body.collapse('toggle'))
-      switch @model.get('status')
-        when 'running' then @$el.addClass('running')
-        when 'passed' then @$el.addClass('passed')
-        when 'pending' then @$el.addClass('pending')
-        when 'failed' then @$el.addClass('failed')
+      @$el.addClass(@model.get('status'))
 
       trialsContainer = @$('.trials')
       for trial in @model.get('trials')
@@ -258,10 +247,7 @@ $(->
       body = @$('.body')
       @$('.header').click(-> body.collapse('toggle'))
 
-      switch @model.get('status')
-        when 'normal_exit' then @$el.addClass('normal')
-        when 'timeout_exit' then @$el.addClass('timeout')
-        when 'failure_exit' then @$el.addClass('failure')
+      @$el.addClass(@model.get('status'))
 
     scrollIntoView: ->
       $('html, body').animate(
