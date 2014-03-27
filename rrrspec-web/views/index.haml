@@ -41,6 +41,6 @@
         %li
           %a{href: "/tasksets/{{key}}"} {{key}}
         %li.pull-right
-          {{#created_at}}{{created_at}} ({{created_at_humanized}}){{/created_at}}
+          {{dateWithHumanized created_at}}
         %li.username.pull-right
           {{rsync_name}}

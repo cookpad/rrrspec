@@ -4,13 +4,8 @@
 #= require vendor/underscore
 #= require vendor/backbone
 #= require bootstrap
+#= require helpers
 #= require models
-
-dateFormat = (date)->
-  moment(date).format("YYYY-MM-DD HH:mm:ss z")
-
-dateDuration = (start, finish)->
-  moment.duration(moment(finish).diff(moment(start))).humanize()
 
 taskIdFromTrialId = (trialId)->
   trialId.match(/^(.*):trial:/)[1]

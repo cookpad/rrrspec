@@ -60,9 +60,9 @@
               %dt Status
               %dd.status {{status}}
               %dt Created
-              %dd.created-at {{created_at}}
+              %dd.created-at {{date created_at}}
               %dt Finished
-              %dd.finished-at {{finished_at}} ({{duration}})
+              %dd.finished-at {{dateWithDuration finished_at created_at}}
               %dt RSync Name
               %dd.rsync-name {{rsync_name}}
               %dt Max Trials
@@ -102,9 +102,9 @@
           %dt Status
           %dd {{status}}
           %dt Started
-          %dd {{#started_at}}{{started_at}}{{/started_at}}
+          %dd {{date started_at}}
           %dt Finished
-          %dd {{#finished_at}}{{finished_at}} ({{duration}}){{/finished_at}}
+          %dd {{dateWithDuration finished_at started_at}}
           %dt Slave
           %dd
             %a{href: "#slave/{{slave.key}}"} {{slave.key}}
@@ -133,11 +133,11 @@
             %dt Started
             %dd {{started_at}}
             %dt RSync Finished
-            %dd {{#rsync_finished_at}}{{rsync_finished_at}} ({{rsync_duration}}){{/rsync_finished_at}}
+            %dd {{dateWithDuration rsync_finished_at started_at}}
             %dt Setup Finished
-            %dd {{#setup_finished_at}}{{setup_finished_at}} ({{setup_duration}}){{/setup_finished_at}}
+            %dd {{dateWithDuration setup_finished_at rsync_finished_at}}
             %dt Finished
-            %dd {{#finished_at}}{{finished_at}} ({{test_duration}}){{/finished_at}}
+            %dd {{dateWithDuration finished_at setup_finished_at}}
 
           %h5 LOG
           %pre.log.pre-scrollable

@@ -4,6 +4,7 @@
 #= require vendor/underscore
 #= require vendor/backbone
 #= require bootstrap
+#= require helpers
 #= require models
 
 $(->
