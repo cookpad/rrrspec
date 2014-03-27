@@ -16,7 +16,7 @@ function before_exit() {
 }
 
 trap "before_exit" EXIT
-RRRSPEC_SERVERS_OPTIONS="--config=rrrspec_servers.rb"
+RRRSPEC_SERVERS_OPTIONS="--config=rrrspec_servers.rb --no-daemonize "
 RRRSPEC_CLIENTS_OPTIONS="--config=rrrspec_clients.rb"
 
 mkdir -p vendor/cache
