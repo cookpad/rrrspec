@@ -85,7 +85,7 @@
             %pre.slave-command {{slave_command}}
 
             %h5 LOG
-            %pre.log.pre-scrollable {{log}}
+            %pre.log.pre-scrollable {{log_text}}
 
       %script#tasklist-template{type: 'text/template'}
         %ul.tasklist-item.header
@@ -141,7 +141,7 @@
 
           %h5 LOG
           %pre.log.pre-scrollable
-            {{log}}
+            {{log_text}}
 
       %script#slave-template{type: 'text/template'}
         .header
@@ -158,4 +158,4 @@
 
           %h5 LOG
           %pre.log.pre-scrollable
-            {{log}}
+            {{log_text}}

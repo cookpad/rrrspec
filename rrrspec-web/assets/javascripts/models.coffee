@@ -13,6 +13,7 @@ class @Taskset extends Backbone.Model
     obj.slaves = new Slaves(obj.slaves, {parse: true, silent: false})
     obj.tasks = new Tasks(obj.tasks, {parse: true, silent: false})
     obj.worker_logs = new WorkerLogs(obj.worker_logs, {parse: true, silent: false})
+    obj.log_text = obj.log
     obj
 
   isFull: -> !!@get('is_full')
@@ -107,6 +108,7 @@ class @WorkerLog extends Backbone.Model
     obj.rsync_finished_at = new Date(obj.rsync_finished_at) if obj.rsync_finished_at
     obj.setup_finished_at = new Date(obj.setup_finished_at) if obj.setup_finished_at
     obj.finished_at = new Date(obj.finished_at) if obj.finished_at
+    obj.log_text = obj.log
     obj
 
   forTemplate: ->
@@ -127,6 +129,10 @@ class @WorkerLogs extends Backbone.Collection
 
 class @Slave extends Backbone.Model
   url: -> "/v1/slaves/#{encodeURIComponent(@get('key'))}"
+  parse: (obj, options) ->
+    obj.log_text = obj.log
+    obj
+
   forTemplate: ->
     j = @toJSON()
     j['trials'] = _.map(j['trials'], (trial) ->
