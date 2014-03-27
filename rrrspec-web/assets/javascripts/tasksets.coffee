@@ -15,7 +15,6 @@ $(->
       'slave/:slave_id': 'slave'
 
   router = new TasksetRouter()
-  Backbone.history.start()
 
   class TasksetView extends Backbone.View
     el: '.taskset'
@@ -81,23 +80,23 @@ $(->
       @renderExampleBar(tasks)
 
   class TaskListView extends Backbone.View
-    el: '.tasklist'
+    el: '.tasks'
 
     initialize: (options) ->
       @subviews = {}
-      @$ul = @$('.tasklist-list')
+      @$ul = @$('.tasks-list')
       @showHeaders = false
       for model in @collection.models
         @appendItem(model)
 
-      @$('.tasklist-heading').click(=>
+      @$('.tasks-heading').click(=>
         @showHeaders = !@showHeaders
         if @showHeaders
-          @$('.tasklist-heading').text("TASKS")
+          @$('.tasks-heading').text("TASKS")
           for key, view of @subviews
             view.showHeader()
         else
-          @$('.tasklist-heading').text("FAILED TASKS")
+          @$('.tasks-heading').text("FAILED TASKS")
           for key, view of @subviews
             view.hideHeaderIfSuccess()
       )
@@ -129,7 +128,7 @@ $(->
   class TaskView extends Backbone.View
     tagName: 'li'
     className: 'list-group-item'
-    template: Handlebars.compile($('#tasklist-template').html())
+    template: Handlebars.compile($('#tasks-list-template').html())
 
     initialize: (options) ->
       @subviews = {}
@@ -140,7 +139,7 @@ $(->
       @$el.html(@template(@model.forTemplate()))
       @$el.addClass(@model.get('status'))
       @hideHeaderIfSuccess()
-      @$('.header').click(=>
+      @$('.tasks-list-item-header').click(=>
         router.navigate("tasks/#{encodeURIComponent(@model.get('key'))}")
         @toggleBody()
       )
@@ -187,7 +186,7 @@ $(->
     initialize: (options) ->
       @subviews = []
       @$ul = @$('.worker-logs-list')
-      @$('.panel-heading').click(((subviews)-> ->
+      @$('.worker-logs-heading').click(((subviews)-> ->
         for view in subviews
           view.toggle()
       )(@subviews))
@@ -213,7 +212,7 @@ $(->
     render: ->
       @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
-      @$('.header').click(-> body.collapse('toggle'))
+      @$('.worker-logs-list-item-header').click(-> body.collapse('toggle'))
 
     toggle: ->
       @$el.toggleClass('hidden')
@@ -224,7 +223,7 @@ $(->
     initialize: (options) ->
       @subviews = {}
       @$ul = @$('.slaves-list')
-      @$('.panel-heading').click(=>
+      @$('.slaves-heading').click(=>
         for key, view of @subviews
           view.toggle()
       )
@@ -257,7 +256,7 @@ $(->
     render: ->
       @$el.html(@template(@model.forTemplate()))
       body = @$('.body')
-      @$('.header').click(-> body.collapse('toggle'))
+      @$('.slaves-list-item-header').click(-> body.collapse('toggle'))
 
       @$el.addClass(@model.get('status'))
 
@@ -274,6 +273,8 @@ $(->
 
     toggle: ->
       @$el.toggleClass('hidden')
+
+  Backbone.history.start()
 
   if document.URL.match(/\/tasksets\/(.*?)(#.*)?$/)
     taskset = new Taskset({key: RegExp.$1})

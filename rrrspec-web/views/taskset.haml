@@ -29,23 +29,23 @@
           .pending-example-bar
           .failed-example-bar
 
-      .tasklist
-        .tasklist-heading.panel-heading FAILED TASKS
-        %ul.list-group.tasklist-list
+      .tasks
+        .tasks-heading FAILED TASKS
+        %ul.tasks-list
           %li.list-group-item
-            %ul.tasklist-header
+            %ul.tasks-list-header
               %li.taskstatus Status
               %li.file File
               %li.trial-count Trials
               %li.estimate-sec Avg.
 
       .worker-logs
-        .panel-heading WORKERS
-        %ul.list-group.worker-logs-list
+        .worker-logs-heading WORKERS
+        %ul.worker-logs-list
 
       .slaves
-        .panel-heading SLAVES
-        %ul.list-group.slaves-list
+        .slaves-heading SLAVES
+        %ul.slaves-list
 
       %script#head-template{type: 'text/template'}
         .panel-heading.clearfix
@@ -87,8 +87,8 @@
             %h5 LOG
             %pre.log {{log_text}}
 
-      %script#tasklist-template{type: 'text/template'}
-        %ul.tasklist-item.header
+      %script#tasks-list-template{type: 'text/template'}
+        %ul.tasks-list-item-header
           %li.taskstatus {{status}}
           %li.file {{spec_file}}
           %li.trial-count {{trials.length}}
@@ -96,7 +96,7 @@
         .body.collapse.trials
 
       %script#trial-template{type: 'text/template'}
-        .panel-heading
+        .trial-list-heading
           .panel-title {{key}}
         %dl
           %dt Status
@@ -125,7 +125,7 @@
 
 
       %script#worker-log-template{type: 'text/template'}
-        .header {{ key }}
+        .worker-logs-list-item-header {{ key }}
         .body.collapse
           %dl
             %dt Name
@@ -144,7 +144,7 @@
             {{log_text}}
 
       %script#slave-template{type: 'text/template'}
-        .header
+        .slaves-list-item-header
           {{key}}
           .exit-status
             {{status}}

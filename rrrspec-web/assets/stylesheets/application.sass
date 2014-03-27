@@ -30,7 +30,7 @@ dl
 .taskset
   @extend .container
 
-  .head, .tasklist, .worker-logs, .slaves
+  .head, .tasks, .worker-logs, .slaves
     @extend .panel
     @extend .panel-default
 
@@ -41,7 +41,7 @@ dl
         color: darken(#428bca, 15%)
         border-color: #428bca
 
-  .tasklist-list, .worker-logs-list, .slaves-list
+  .tasks-list, .worker-logs-list, .slaves-list
     > *
       padding: 0
 
@@ -99,11 +99,14 @@ dl
         @extend .progress-bar
         @extend .progress-bar-danger
 
-  .tasklist
-    .taskstatus
-      text-align: center
+  .tasks
+    .tasks-heading
+      @extend .panel-heading
 
-    .tasklist-header, .tasklist-item
+    .tasks-list
+      @extend .list-group
+
+    .tasks-list-header, .tasks-list-item-header
       list-style-type: none
 
       li
@@ -120,53 +123,66 @@ dl
         text-align: left
         text-overflow: ellipsis
 
-    .header
+    .tasks-list-item-header
       cursor: pointer
 
-    .running .header
+    .running .tasks-list-item-header
       background-color: #f5f5f5
       &:hover
         background-color: darken(#f5f5f5, 20%)
-    .passed .header
+    .passed .tasks-list-item-header
       background-color: #dff0d8
       &:hover
         background-color: darken(#dff0d8, 20%)
-    .pending .header
+    .pending .tasks-list-item-header
       background-color: #fcf8e3
       &:hover
         background-color: darken(#fcf8e3, 20%)
-    .failed .header
+    .failed .tasks-list-item-header
       background-color: #f2dede
       &:hover
         background-color: darken(#f2dede, 20%)
 
-    .tasklist-item
+    .tasks-list-item-header
       .taskstatus
         text-transform: uppercase
 
-  .worker-logs
-    .header
-      cursor: pointer
+  .trials-list-heading
+    @extend .panel-heading
 
+  .worker-logs
+    .worker-logs-heading
+      @extend .panel-heading
+
+    .worker-logs-list
+      @extend .list-group
+
+    .worker-logs-list-item-header
+      cursor: pointer
       &:hover
         color: darken(#428bca, 15%)
         text-decoration: underline
 
   .slaves
-    .exit-status
-      @extend .pull-right
-      text-transform: uppercase
+    .slaves-heading
+      @extend .panel-heading
 
-    .header
+    .slaves-list
+      @extend .list-group
+
+    .slaves-list-item-header
       cursor: pointer
-
       &:hover
         color: darken(#428bca, 15%)
         text-decoration: underline
 
-    .normal_exit .header
+    .exit-status
+      @extend .pull-right
+      text-transform: uppercase
+
+    .normal_exit .slaves-list-item-header
       background-color: #dff0d8
-    .timeout_exit .header
+    .timeout_exit .slaves-list-item-header
       background-color: #fcf8e3
-    .failure_exit .header
+    .failure_exit .slaves-list-item-header
       background-color: #f2dede
