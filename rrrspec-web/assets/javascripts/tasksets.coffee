@@ -15,280 +15,280 @@ dateDuration = (start, finish)->
 taskIdFromTrialId = (trialId)->
   trialId.match(/^(.*):trial:/)[1]
 
-class TasksetRouter extends Backbone.Router
-  routes:
-    'slave/:slave_id': 'slave'
-    'trial/:trial_id': 'trial'
+$(->
+  class TasksetRouter extends Backbone.Router
+    routes:
+      'slave/:slave_id': 'slave'
+      'trial/:trial_id': 'trial'
 
-router = new TasksetRouter()
-Backbone.history.start()
+  router = new TasksetRouter()
+  Backbone.history.start()
 
-class TasksetView extends Backbone.View
-  el: '.taskset'
+  class TasksetView extends Backbone.View
+    el: '.taskset'
 
-  initialize: ->
-    @headView = new HeadView({model: @model})
-    @progressbarView = new ProgressBarView({model: @model})
-    @taskListView = new TaskListView({collection: @model.get('tasks')})
-    @workerLogListView = new WorkerLogListView({collection: @model.get('worker_logs')})
-    @slaveListView = new SlaveListView({collection: @model.get('slaves')})
+    initialize: ->
+      @headView = new HeadView({model: @model})
+      @progressbarView = new ProgressBarView({model: @model})
+      @taskListView = new TaskListView({collection: @model.get('tasks')})
+      @workerLogListView = new WorkerLogListView({collection: @model.get('worker_logs')})
+      @slaveListView = new SlaveListView({collection: @model.get('slaves')})
 
-  render: ->
-    @headView.render()
-    @progressbarView.render()
-    @taskListView.render()
-    @workerLogListView.render()
-    @slaveListView.render()
+    render: ->
+      @headView.render()
+      @progressbarView.render()
+      @taskListView.render()
+      @workerLogListView.render()
+      @slaveListView.render()
 
-class HeadView extends Backbone.View
-  el: '.head'
+  class HeadView extends Backbone.View
+    el: '.head'
 
-  render: ->
-    @$el.html(Handlebars.compile($('#head-template').html())(@model.forTemplate()))
-    @$('.panel-heading .status').addClass(
-      switch @model.get('status')
-        when 'running' then 'label-active'
-        when 'succeeded' then 'label-success'
-        when 'cancelled' then 'label-warning'
-        when 'failed' then 'label-danger'
-        else ''
-    )
+    render: ->
+      @$el.html(Handlebars.compile($('#head-template').html())(@model.forTemplate()))
+      @$('.panel-heading .status').addClass(
+        switch @model.get('status')
+          when 'running' then 'label-active'
+          when 'succeeded' then 'label-success'
+          when 'cancelled' then 'label-warning'
+          when 'failed' then 'label-danger'
+          else ''
+      )
 
-class ProgressBarView extends Backbone.View
-  el: '.progressbars'
+  class ProgressBarView extends Backbone.View
+    el: '.progressbars'
 
-  render: ->
-    tasks = @model.get('tasks')
-    if @model.isFinished()
-      @$('.spec-progress').removeClass('progress-striped active')
-      @$('.spec-progress-bar').attr('style', 'width: 0%')
-      @$('.spec-progress-bar').text('')
-      if tasks.numPassedTask > 0
-        @$('.passed-spec-bar').attr('style', "width: #{100*tasks.numPassedTask/tasks.numTask}%")
-        @$('.passed-spec-bar').text(tasks.numPassedTask)
-      if tasks.numPendingTask > 0
-        @$('.pending-spec-bar').attr('style', "width: #{100*tasks.numPendingTask/tasks.numTask}%")
-        @$('.pending-spec-bar').text(tasks.numPendingTask)
-      if tasks.numFailedTask > 0
-        @$('.failed-spec-bar').attr('style', "width: #{100*tasks.numFailedTask/tasks.numTask}%")
-        @$('.failed-spec-bar').text(tasks.numFailedTask)
-    else
-      numFinishedTask = tasks.numPassedTask + tasks.numPendingTask + tasks.numFailedTask
-      percentage = 100*numFinishedTask/tasks.numTask
-      @$('.spec-progress').addClass('progress-striped active')
-      @$('.spec-progress-bar').attr('style', "width: #{percentage}%")
-      @$('.spec-progress-bar').text("#{numFinishedTask}/#{tasks.numTask}(#{percentage}%)")
-      @$('.passed-spec-bar').attr('style', 'width: 0%')
-      @$('.passed-spec-bar').text('')
-      @$('.pending-spec-bar').attr('style', 'width: 0%')
-      @$('.pending-spec-bar').text('')
-      @$('.failed-spec-bar').attr('style', 'width: 0%')
-      @$('.failed-spec-bar').text('')
-
-    if tasks.numPassedExample > 0
-      @$('.passed-example-bar').attr('style', "width: #{100*tasks.numPassedExample/tasks.numExample}%")
-      @$('.passed-example-bar').text(tasks.numPassedExample)
-    else
-      @$('.passed-example-bar').attr('style', "width: 0%")
-      @$('.passed-example-bar').text('')
-    if tasks.numPendingExample > 0
-      @$('.pending-example-bar').attr('style', "width: #{100*tasks.numPendingExample/tasks.numExample}%")
-      @$('.pending-example-bar').text(tasks.numPendingExample)
-    else
-      @$('.pending-example-bar').attr('style', "width: 0%")
-      @$('.pending-example-bar').text('')
-    if tasks.numFailedExample > 0
-      @$('.failed-example-bar').attr('style', "width: #{100*tasks.numFailedExample/tasks.numExample}%")
-      @$('.failed-example-bar').text(tasks.numFailedExample)
-    else
-      @$('.failed-example-bar').attr('style', "width: 0%")
-      @$('.failed-example-bar').text('')
-
-class TaskListView extends Backbone.View
-  el: '.tasklist'
-
-  initialize: (options) ->
-    @subviews = {}
-    @$ul = @$('.tasklist-list')
-    @heading = @$('.panel-heading')
-    @heading.click(=>
-      if @heading.text() == "FAILED TASKS"
-        @heading.text("TASKS")
+    render: ->
+      tasks = @model.get('tasks')
+      if @model.isFinished()
+        @$('.spec-progress').removeClass('progress-striped active')
+        @$('.spec-progress-bar').attr('style', 'width: 0%')
+        @$('.spec-progress-bar').text('')
+        if tasks.numPassedTask > 0
+          @$('.passed-spec-bar').attr('style', "width: #{100*tasks.numPassedTask/tasks.numTask}%")
+          @$('.passed-spec-bar').text(tasks.numPassedTask)
+        if tasks.numPendingTask > 0
+          @$('.pending-spec-bar').attr('style', "width: #{100*tasks.numPendingTask/tasks.numTask}%")
+          @$('.pending-spec-bar').text(tasks.numPendingTask)
+        if tasks.numFailedTask > 0
+          @$('.failed-spec-bar').attr('style', "width: #{100*tasks.numFailedTask/tasks.numTask}%")
+          @$('.failed-spec-bar').text(tasks.numFailedTask)
       else
-        @heading.text("FAILED TASKS")
-      for key, view of @subviews
-        view.toggle()
-    )
-    for model in @collection.models
-      @appendItem(model)
-    router.on('route:trial', (trialId) =>
-      taskId = taskIdFromTrialId(trialId)
-      target = @subviews[taskId]
-      target.show()
-      target.showBody()
-      target.scrollIntoViewOfTrial(trialId)
-    )
+        numFinishedTask = tasks.numPassedTask + tasks.numPendingTask + tasks.numFailedTask
+        percentage = 100*numFinishedTask/tasks.numTask
+        @$('.spec-progress').addClass('progress-striped active')
+        @$('.spec-progress-bar').attr('style', "width: #{percentage}%")
+        @$('.spec-progress-bar').text("#{numFinishedTask}/#{tasks.numTask}(#{percentage}%)")
+        @$('.passed-spec-bar').attr('style', 'width: 0%')
+        @$('.passed-spec-bar').text('')
+        @$('.pending-spec-bar').attr('style', 'width: 0%')
+        @$('.pending-spec-bar').text('')
+        @$('.failed-spec-bar').attr('style', 'width: 0%')
+        @$('.failed-spec-bar').text('')
 
-  appendItem: (model) ->
-    view = new TaskView({model: model})
-    @subviews[model.attributes.key] = view
-    view.render()
-    @$ul.append(view.$el)
+      if tasks.numPassedExample > 0
+        @$('.passed-example-bar').attr('style', "width: #{100*tasks.numPassedExample/tasks.numExample}%")
+        @$('.passed-example-bar').text(tasks.numPassedExample)
+      else
+        @$('.passed-example-bar').attr('style', "width: 0%")
+        @$('.passed-example-bar').text('')
+      if tasks.numPendingExample > 0
+        @$('.pending-example-bar').attr('style', "width: #{100*tasks.numPendingExample/tasks.numExample}%")
+        @$('.pending-example-bar').text(tasks.numPendingExample)
+      else
+        @$('.pending-example-bar').attr('style', "width: 0%")
+        @$('.pending-example-bar').text('')
+      if tasks.numFailedExample > 0
+        @$('.failed-example-bar').attr('style', "width: #{100*tasks.numFailedExample/tasks.numExample}%")
+        @$('.failed-example-bar').text(tasks.numFailedExample)
+      else
+        @$('.failed-example-bar').attr('style', "width: 0%")
+        @$('.failed-example-bar').text('')
 
-  render: ->
-    for key, view in @subviews
+  class TaskListView extends Backbone.View
+    el: '.tasklist'
+
+    initialize: (options) ->
+      @subviews = {}
+      @$ul = @$('.tasklist-list')
+      @heading = @$('.panel-heading')
+      @heading.click(=>
+        if @heading.text() == "FAILED TASKS"
+          @heading.text("TASKS")
+        else
+          @heading.text("FAILED TASKS")
+        for key, view of @subviews
+          view.toggle()
+      )
+      for model in @collection.models
+        @appendItem(model)
+      router.on('route:trial', (trialId) =>
+        taskId = taskIdFromTrialId(trialId)
+        target = @subviews[taskId]
+        target.show()
+        target.showBody()
+        target.scrollIntoViewOfTrial(trialId)
+      )
+
+    appendItem: (model) ->
+      view = new TaskView({model: model})
+      @subviews[model.attributes.key] = view
       view.render()
+      @$ul.append(view.$el)
 
-class TaskView extends Backbone.View
-  tagName: 'li'
-  className: 'list-group-item'
+    render: ->
+      for key, view in @subviews
+        view.render()
 
-  initialize: (options) ->
-    @subviews = {}
-  render: ->
-    @$el.html(Handlebars.compile($('#tasklist-template').html())(@model.forTemplate()))
-    body = @$('.body')
-    @$('.header').click(-> body.collapse('toggle'))
-    switch @model.get('status')
-      when 'running' then @$el.addClass('running')
-      when 'passed' then @$el.addClass('passed')
-      when 'pending' then @$el.addClass('pending')
-      when 'failed' then @$el.addClass('failed')
+  class TaskView extends Backbone.View
+    tagName: 'li'
+    className: 'list-group-item'
 
-    trialsContainer = @$('.trials')
-    for trial in @model.get('trials')
-      view = new TrialView({model: trial})
-      @subviews[trial.attributes.key] = view
+    initialize: (options) ->
+      @subviews = {}
+    render: ->
+      @$el.html(Handlebars.compile($('#tasklist-template').html())(@model.forTemplate()))
+      body = @$('.body')
+      @$('.header').click(-> body.collapse('toggle'))
+      switch @model.get('status')
+        when 'running' then @$el.addClass('running')
+        when 'passed' then @$el.addClass('passed')
+        when 'pending' then @$el.addClass('pending')
+        when 'failed' then @$el.addClass('failed')
+
+      trialsContainer = @$('.trials')
+      for trial in @model.get('trials')
+        view = new TrialView({model: trial})
+        @subviews[trial.attributes.key] = view
+        view.render()
+        trialsContainer.append(view.$el)
+
+      if @shouldHide()
+        @$el.addClass('hidden')
+
+    shouldHide: ->
+      status = @model.get('status')
+      return status == 'passed' || status == 'pending'
+
+    toggle: ->
+      if @shouldHide()
+        @$el.toggleClass('hidden')
+
+    show: ->
+      @$el.removeClass('hidden')
+
+    showBody: ->
+      @$('.body').collapse('show')
+
+    scrollIntoViewOfTrial: (trialId) ->
+      @subviews[trialId].scrollIntoView()
+
+  class TrialView extends Backbone.View
+    className: 'panel'
+
+    render: ->
+      @$el.html(Handlebars.compile($('#trial-template').html())(@model.forTemplate()))
+
+    scrollIntoView: ->
+      $('html, body').animate(
+        scrollTop: @$el.offset().top
+      )
+
+  class WorkerLogListView extends Backbone.View
+    el: '.worker-logs'
+
+    initialize: (options) ->
+      @subviews = []
+      @$ul = @$('.worker-logs-list')
+      @$('.panel-heading').click(((subviews)-> ->
+        for view in subviews
+          view.toggle()
+      )(@subviews))
+      @listenTo(@collection, "add", @appendItem)
+      for obj in @collection.models
+        @appendItem(obj)
+
+    appendItem: (model) ->
+      view = new WorkerLogView({model: model})
+      @subviews.push(view)
       view.render()
-      trialsContainer.append(view.$el)
+      @$ul.append(view.$el)
 
-    if @shouldHide()
-      @$el.addClass('hidden')
+    render: ->
+      for view in @subviews
+        view.render()
 
-  shouldHide: ->
-    status = @model.get('status')
-    return status == 'passed' || status == 'pending'
+  class WorkerLogView extends Backbone.View
+    tagName: 'li'
+    className: 'list-group-item hidden'
 
-  toggle: ->
-    if @shouldHide()
+    render: ->
+      @$el.html(Handlebars.compile($('#worker-log-template').html())(@model.forTemplate()))
+      body = @$('.body')
+      @$('.header').click(-> body.collapse('toggle'))
+
+    toggle: ->
       @$el.toggleClass('hidden')
 
-  show: ->
-    @$el.removeClass('hidden')
+  class SlaveListView extends Backbone.View
+    el: '.slaves'
 
-  showBody: ->
-    @$('.body').collapse('show')
+    initialize: (options) ->
+      @subviews = {}
+      @$ul = @$('.slaves-list')
+      @$('.panel-heading').click(=>
+        for key, view of @subviews
+          view.toggle()
+      )
+      @listenTo(@collection, "add", @appendItem)
+      for obj in @collection.models
+        @appendItem(obj)
+      router.on('route:slave', (slaveId) =>
+        for key, view of @subviews
+          view.show()
+        target = @subviews[slaveId]
+        target.scrollIntoView()
+        target.showBody()
+      )
 
-  scrollIntoViewOfTrial: (trialId) ->
-    @subviews[trialId].scrollIntoView()
-
-class TrialView extends Backbone.View
-  className: 'panel'
-
-  render: ->
-    @$el.html(Handlebars.compile($('#trial-template').html())(@model.forTemplate()))
-
-  scrollIntoView: ->
-    $('html, body').animate(
-      scrollTop: @$el.offset().top
-    )
-
-class WorkerLogListView extends Backbone.View
-  el: '.worker-logs'
-
-  initialize: (options) ->
-    @subviews = []
-    @$ul = @$('.worker-logs-list')
-    @$('.panel-heading').click(((subviews)-> ->
-      for view in subviews
-        view.toggle()
-    )(@subviews))
-    @listenTo(@collection, "add", @appendItem)
-    for obj in @collection.models
-      @appendItem(obj)
-
-  appendItem: (model) ->
-    view = new WorkerLogView({model: model})
-    @subviews.push(view)
-    view.render()
-    @$ul.append(view.$el)
-
-  render: ->
-    for view in @subviews
+    appendItem: (model) ->
+      view = new SlaveView({model: model})
+      @subviews[model.attributes.key] = view
       view.render()
+      @$ul.append(view.$el)
 
-class WorkerLogView extends Backbone.View
-  tagName: 'li'
-  className: 'list-group-item hidden'
-
-  render: ->
-    @$el.html(Handlebars.compile($('#worker-log-template').html())(@model.forTemplate()))
-    body = @$('.body')
-    @$('.header').click(-> body.collapse('toggle'))
-
-  toggle: ->
-    @$el.toggleClass('hidden')
-
-class SlaveListView extends Backbone.View
-  el: '.slaves'
-
-  initialize: (options) ->
-    @subviews = {}
-    @$ul = @$('.slaves-list')
-    @$('.panel-heading').click(=>
+    render: ->
       for key, view of @subviews
-        view.toggle()
-    )
-    @listenTo(@collection, "add", @appendItem)
-    for obj in @collection.models
-      @appendItem(obj)
-    router.on('route:slave', (slaveId) =>
-      for key, view of @subviews
-        view.show()
-      target = @subviews[slaveId]
-      target.scrollIntoView()
-      target.showBody()
-    )
+        view.render()
 
-  appendItem: (model) ->
-    view = new SlaveView({model: model})
-    @subviews[model.attributes.key] = view
-    view.render()
-    @$ul.append(view.$el)
+  class SlaveView extends Backbone.View
+    tagName: 'li'
+    className: 'list-group-item hidden'
 
-  render: ->
-    for key, view of @subviews
-      view.render()
+    render: ->
+      @$el.html(Handlebars.compile($('#slave-template').html())(@model.forTemplate()))
+      body = @$('.body')
+      @$('.header').click(-> body.collapse('toggle'))
 
-class SlaveView extends Backbone.View
-  tagName: 'li'
-  className: 'list-group-item hidden'
+      switch @model.get('status')
+        when 'normal_exit' then @$el.addClass('normal')
+        when 'timeout_exit' then @$el.addClass('timeout')
+        when 'failure_exit' then @$el.addClass('failure')
 
-  render: ->
-    @$el.html(Handlebars.compile($('#slave-template').html())(@model.forTemplate()))
-    body = @$('.body')
-    @$('.header').click(-> body.collapse('toggle'))
+    scrollIntoView: ->
+      $('html, body').animate(
+        scrollTop: @$el.offset().top
+      )
 
-    switch @model.get('status')
-      when 'normal_exit' then @$el.addClass('normal')
-      when 'timeout_exit' then @$el.addClass('timeout')
-      when 'failure_exit' then @$el.addClass('failure')
+    show: ->
+      @$el.removeClass('hidden')
 
-  scrollIntoView: ->
-    $('html, body').animate(
-      scrollTop: @$el.offset().top
-    )
+    showBody: ->
+      @$('.body').collapse('show')
 
-  show: ->
-    @$el.removeClass('hidden')
+    toggle: ->
+      @$el.toggleClass('hidden')
 
-  showBody: ->
-    @$('.body').collapse('show')
-
-  toggle: ->
-    @$el.toggleClass('hidden')
-
-$(->
   if document.URL.match(/\/tasksets\/(.*?)(#.*)?$/)
     taskset = new Taskset({key: RegExp.$1})
     taskset.fetch({
