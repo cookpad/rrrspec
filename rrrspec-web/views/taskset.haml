@@ -103,7 +103,7 @@
           %dd {{dateWithDuration finished_at started_at}}
           %dt Slave
           %dd
-            %a{href: "#slave/{{slave_id}}"} slave/{{slave_id}}
+            %a{href: "#slaves/{{slave_id}}"} slaves/{{slave_id}}
           %dt Passed
           %dd {{passed}}
           %dt Pending
@@ -146,7 +146,7 @@
           %ol
             {{#trials}}
             %li
-              %a{href: "#trial/{{id}}"} {{key}}
+              %a{href: "#trials/{{id}}"} {{key}}
             {{/trials}}
 
           %h5 LOG
