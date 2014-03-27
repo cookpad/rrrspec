@@ -12,38 +12,38 @@
           .modal-body
             Not found
 
-    .taskset.container.hidden
-      .head.panel.panel-default
+    .taskset.hidden
+      .head
 
       .progressbars
         %h5 FILES
-        .progress.spec-progress
-          .progress-bar.spec-progress-bar
-          .progress-bar.progress-bar-success.passed-spec-bar
-          .progress-bar.progress-bar-warning.pending-spec-bar
-          .progress-bar.progress-bar-danger.failed-spec-bar
+        .spec-progress
+          .spec-progress-bar
+          .passed-spec-bar
+          .pending-spec-bar
+          .failed-spec-bar
 
         %h5 EXAMPLES
-        .progress.example-progress
-          .progress-bar.progress-bar-success.passed-example-bar
-          .progress-bar.progress-bar-warning.pending-example-bar
-          .progress-bar.progress-bar-danger.failed-example-bar
+        .example-progress
+          .passed-example-bar
+          .pending-example-bar
+          .failed-example-bar
 
-      .panel.panel-default.tasklist
+      .tasklist
         .panel-heading FAILED TASKS
         %ul.list-group.tasklist-list
           %li.list-group-item
             %ul.tasklist-header
               %li.taskstatus Status
               %li.file File
-              %li.pull-right.trial-count Trials
-              %li.pull-right.estimate-sec Avg.
+              %li.trial-count Trials
+              %li.estimate-sec Avg.
 
-      .panel.panel-default.worker-logs
+      .worker-logs
         .panel-heading WORKERS
         %ul.list-group.worker-logs-list
 
-      .panel.panel-default.slaves
+      .slaves
         .panel-heading SLAVES
         %ul.list-group.slaves-list
 
@@ -54,7 +54,7 @@
           %span.label.status {{status}}
         #taskset-info.panel-collapse.collapse
           .panel-body
-            %dl.dl-horizontal
+            %dl
               %dt Name
               %dd.name {{key}}
               %dt Status
@@ -85,20 +85,20 @@
             %pre.slave-command {{slave_command}}
 
             %h5 LOG
-            %pre.log.pre-scrollable {{log_text}}
+            %pre.log {{log_text}}
 
       %script#tasklist-template{type: 'text/template'}
         %ul.tasklist-item.header
           %li.taskstatus {{status}}
           %li.file {{spec_file}}
-          %li.pull-right.trial-count {{trials.length}}
-          %li.pull-right.estimate-sec {{estimate_sec}}
+          %li.trial-count {{trials.length}}
+          %li.estimate-sec {{estimate_sec}}
         .body.collapse.trials
 
       %script#trial-template{type: 'text/template'}
         .panel-heading
           .panel-title {{key}}
-        %dl.dl-horizontal
+        %dl
           %dt Status
           %dd {{status}}
           %dt Started
@@ -116,18 +116,18 @@
           %dd {{failed}}
 
         %h5 STDOUT
-        %pre.log.pre-scrollable
+        %pre.log
           {{stdout}}
 
         %h5 STDERR
-        %pre.log.pre-scrollable
+        %pre.log
           {{stderr}}
 
 
       %script#worker-log-template{type: 'text/template'}
         .header {{ key }}
         .body.collapse
-          %dl.dl-horizontal
+          %dl
             %dt Name
             %dd {{key}}
             %dt Started
@@ -140,13 +140,13 @@
             %dd {{dateWithDuration finished_at setup_finished_at}}
 
           %h5 LOG
-          %pre.log.pre-scrollable
+          %pre.log
             {{log_text}}
 
       %script#slave-template{type: 'text/template'}
         .header
           {{key}}
-          .exit-status.pull-right
+          .exit-status
             {{status}}
         .body.collapse
           %h5 TRIALS
@@ -157,5 +157,5 @@
             {{/trials}}
 
           %h5 LOG
-          %pre.log.pre-scrollable
+          %pre.log
             {{log_text}}

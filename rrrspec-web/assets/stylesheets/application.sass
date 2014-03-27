@@ -3,8 +3,11 @@
 body
   padding-top: 20px
 
+dl
+  @extend .dl-horizontal
 
 .log
+  @extend .pre-scrollable
   word-wrap: normal
   white-space: pre
   overflow-x: scroll
@@ -25,6 +28,26 @@ body
     padding-right: 2em
 
 .taskset
+  @extend .container
+
+  .head, .tasklist, .worker-logs, .slaves
+    @extend .panel
+    @extend .panel-default
+
+    > .panel-heading
+      cursor: pointer
+      font-size: large
+      &:hover
+        color: darken(#428bca, 15%)
+        border-color: #428bca
+
+  .tasklist-list, .worker-logs-list, .slaves-list
+    > *
+      padding: 0
+
+    .list-group-item > *
+      padding: 10px 15px
+
   .head
     .panel-heading
       .name
@@ -41,20 +64,31 @@ body
         text-transform: uppercase
         float: left
 
-  .tasklist-list, .slaves-list, .worker-logs-list
-    > *
-      padding: 0
-
-    .list-group-item > *
-      padding: 10px 15px
-
-  .tasklist, .worker-logs, .slaves
-    > .panel-heading
-      cursor: pointer
-      font-size: large
-      &:hover
-        color: darken(#428bca, 15%)
-        border-color: #428bca
+  .progressbars
+    .spec-progress
+      @extend .progress
+      .spec-progress-bar
+        @extend .progress-bar
+      .passed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-spec-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
+    .example-progress
+      @extend .progress
+      .passed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-success
+      .pending-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-warning
+      .failed-example-bar
+        @extend .progress-bar
+        @extend .progress-bar-danger
 
   .tasklist
     .taskstatus
@@ -69,6 +103,9 @@ body
       .taskstatus, .trial-count, .estimate-sec
         width: 6em
         text-align: center
+
+      .trial-count, .estimate-sec
+        @extend .pull-right
 
       .file
         text-align: left
@@ -108,6 +145,7 @@ body
 
   .slaves
     .exit-status
+      @extend .pull-right
       text-transform: uppercase
 
     .header
@@ -123,4 +161,3 @@ body
       background-color: #fcf8e3
     .failure .header
       background-color: #f2dede
-
