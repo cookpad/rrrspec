@@ -23,6 +23,10 @@ class @Task extends Backbone.Model
       obj.trials = _.map(obj.trials, (trial) -> new Trial(trial, {parse: true}))
     obj
 
+  isSuccess: ->
+    status = @get('status')
+    return status == 'passed' || status == 'pending'
+
   numExamples: ->
     passed = null
     pending = null

@@ -7,14 +7,12 @@
 #= require helpers
 #= require models
 
-taskIdFromTrialId = (trialId)->
-  trialId.match(/^(.*):trial:/)[1]
-
 $(->
   class TasksetRouter extends Backbone.Router
     routes:
+      'tasks/:task_key': 'task'
+      'trial/:trial_key': 'trial'
       'slave/:slave_id': 'slave'
-      'trial/:trial_id': 'trial'
 
   router = new TasksetRouter()
   Backbone.history.start()
@@ -88,23 +86,34 @@ $(->
     initialize: (options) ->
       @subviews = {}
       @$ul = @$('.tasklist-list')
-      @heading = @$('.panel-heading')
-      @heading.click(=>
-        if @heading.text() == "FAILED TASKS"
-          @heading.text("TASKS")
-        else
-          @heading.text("FAILED TASKS")
-        for key, view of @subviews
-          view.toggle()
-      )
+      @showHeaders = false
       for model in @collection.models
         @appendItem(model)
-      router.on('route:trial', (trialId) =>
-        taskId = taskIdFromTrialId(trialId)
-        target = @subviews[taskId]
-        target.show()
-        target.showBody()
-        target.scrollIntoViewOfTrial(trialId)
+
+      @$('.tasklist-heading').click(=>
+        @showHeaders = !@showHeaders
+        if @showHeaders
+          @$('.tasklist-heading').text("TASKS")
+          for key, view of @subviews
+            view.showHeader()
+        else
+          @$('.tasklist-heading').text("FAILED TASKS")
+          for key, view of @subviews
+            view.hideHeaderIfSuccess()
+      )
+      router.on('route:task', (taskKey) =>
+        view = @subviews[taskKey]
+        view.showHeader()
+        view.showBody()
+        view.scrollIntoView()
+      )
+      router.on('route:trial', (trialKey) =>
+        for key, view of @subviews
+          if view.hasTrial(trialKey)
+            view.showHeader()
+            view.showBody()
+            view.scrollIntoViewOfTrial(trialKey)
+            break
       )
 
     appendItem: (model) ->
@@ -124,38 +133,44 @@ $(->
 
     initialize: (options) ->
       @subviews = {}
+
+    hasTrial: (trialKey) -> !!@subviews[trialKey]
+
     render: ->
       @$el.html(@template(@model.forTemplate()))
-      body = @$('.body')
-      @$('.header').click(-> body.collapse('toggle'))
       @$el.addClass(@model.get('status'))
+      @hideHeaderIfSuccess()
+      @$('.header').click(=>
+        router.navigate("tasks/#{encodeURIComponent(@model.get('key'))}")
+        @toggleBody()
+      )
 
-      trialsContainer = @$('.trials')
       for trial in @model.get('trials')
-        view = new TrialView({model: trial})
-        @subviews[trial.attributes.key] = view
-        view.render()
-        trialsContainer.append(view.$el)
+        @appendTrial(trial)
 
-      if @shouldHide()
-        @$el.addClass('hidden')
+    appendTrial: (trial) ->
+      view = new TrialView({model: trial})
+      @subviews[trial.attributes.key] = view
+      view.render()
+      @$('.trials').append(view.$el)
 
-    shouldHide: ->
-      status = @model.get('status')
-      return status == 'passed' || status == 'pending'
-
-    toggle: ->
-      if @shouldHide()
-        @$el.toggleClass('hidden')
-
-    show: ->
+    showHeader: ->
       @$el.removeClass('hidden')
+
+    hideHeaderIfSuccess: ->
+      if @model.isSuccess()
+        @$el.addClass('hidden')
 
     showBody: ->
       @$('.body').collapse('show')
 
-    scrollIntoViewOfTrial: (trialId) ->
-      @subviews[trialId].scrollIntoView()
+    toggleBody: ->
+      @$('.body').collapse('toggle')
+
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
+
+    scrollIntoViewOfTrial: (trialKey) ->
+      @subviews[trialKey].scrollIntoView()
 
   class TrialView extends Backbone.View
     className: 'panel'
@@ -164,10 +179,7 @@ $(->
     render: ->
       @$el.html(@template(@model.forTemplate()))
 
-    scrollIntoView: ->
-      $('html, body').animate(
-        scrollTop: @$el.offset().top
-      )
+    scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
 
   class WorkerLogListView extends Backbone.View
     el: '.worker-logs'
