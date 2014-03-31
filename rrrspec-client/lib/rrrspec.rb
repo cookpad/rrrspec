@@ -69,8 +69,9 @@ module RRRSpec
   end
 
   # When there's no suitable home directory, File.expand_path raises ArgumentError
+  home_rrrspec = File.expand_path('~/.rrrspec') rescue nil
   DEFAULT_CONFIG_FILES = [
-    File.expand_path('~/.rrrspec') rescue nil,
+    home_rrrspec,
     '.rrrspec',
     '.rrrspec-local'
   ].compact
