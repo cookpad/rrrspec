@@ -37,7 +37,7 @@ module RRRSpec
 
       def initialize
         super()
-        @slave_processes = Facter.processorcount.to_i
+        @slave_processes = Facter.value(:processorcount).to_i
         @worker_type = 'default'
         @type = :worker
       end
