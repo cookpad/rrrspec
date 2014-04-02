@@ -38,6 +38,10 @@ module RRRSpec
       Trial.create(task, slave)
     end
 
+    def taskset_id
+      RRRSpec::Server::Persistence::Taskset.by_redis_model(taskset).first!.id
+    end
+
     before do
       taskset.add_task(task)
       taskset.enqueue_task(task)
@@ -224,7 +228,7 @@ module RRRSpec
           include_context 'the taskset is persisted'
 
           it 'returns a string in JSON' do
-            get "/v2/tasksets/1/log"
+            get "/v2/tasksets/#{taskset_id}/log"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq({
               'log' => 'taskset log body',
@@ -238,7 +242,7 @@ module RRRSpec
           include_context 'the taskset is persisted'
 
           it 'returns trials in JSON' do
-            get "/v2/tasks/1/trials"
+            get "/v2/tasks/#{taskset_id}/trials"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq([
               {
@@ -263,7 +267,7 @@ module RRRSpec
           include_context 'the taskset is persisted'
 
           it 'returns worker logs in JSON' do
-            get "/v2/tasksets/1/worker_logs"
+            get "/v2/tasksets/#{taskset_id}/worker_logs"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq([
               {
@@ -285,7 +289,7 @@ module RRRSpec
           include_context 'the taskset is persisted'
 
           it 'returns slaves in JSON' do
-            get "/v2/tasksets/1/slaves"
+            get "/v2/tasksets/#{taskset_id}/slaves"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq([
               {
