@@ -16,6 +16,8 @@ module RRRSpec
             :worker_logs => [:taskset]
           )
         end
+
+        scope :by_redis_model, -> (_) { where(key: _.key) }
       end
 
       class Task < ActiveRecord::Base

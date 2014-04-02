@@ -64,6 +64,10 @@ module RRRSpec
       format :json
       formatter :json, OjFormatter
 
+      rescue_from(ActiveRecord::RecordNotFound) do
+        [404, {}, ['']]
+      end
+
       # For Index
 
       get '/tasksets/actives' do
@@ -79,7 +83,7 @@ module RRRSpec
       # Notice that this method takes taskset key.
       params { requires :taskset_key, type: String }
       get '/tasksets/:taskset_key' do
-        RRRSpec::Server::Persistence::Taskset.includes(tasks: :trials).find_by_key(params[:taskset_key]).as_json_for_result_page
+        RRRSpec::Server::Persistence::Taskset.includes(tasks: :trials).where(key: params[:taskset_key]).first!.as_json_for_result_page
       end
 
       params { requires :taskset_id, type: Integer }
@@ -100,12 +104,12 @@ module RRRSpec
 
       params { requires :taskset_id, type: Integer }
       get '/tasksets/:taskset_id/worker_logs' do
-        RRRSpec::Server::Persistence::WorkerLog.where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)
+        RRRSpec::Server::Persistence::Taskset.find(params[:taskset_id]).worker_logs.map(&:as_json_for_result_page)
       end
 
       params { requires :taskset_id, type: Integer }
       get '/tasksets/:taskset_id/slaves' do
-        RRRSpec::Server::Persistence::Slave.includes(:trials).where(taskset_id: params[:taskset_id]).map(&:as_json_for_result_page)
+        RRRSpec::Server::Persistence::Taskset.includes(slaves: :trials).find(params[:taskset_id]).slaves.map(&:as_json_for_result_page)
       end
     end
   end
