@@ -221,6 +221,13 @@ module RRRSpec
             })
           end
         end
+
+        context "when the taskset is not persisted" do
+          it "returns 404" do
+            get "/v2/tasksets/#{taskset.key}"
+            expect(last_response.status).to eq(404)
+          end
+        end
       end
 
       describe 'GET /v2/tasksets/:taskset_id/log' do
@@ -233,6 +240,13 @@ module RRRSpec
             expect(JSON.parse(last_response.body)).to eq({
               'log' => 'taskset log body',
             })
+          end
+        end
+
+        context "when the taskset is not persisted" do
+          it "returns 404" do
+            get "/v2/tasksets/0/log"
+            expect(last_response.status).to eq(404)
           end
         end
       end
@@ -260,6 +274,13 @@ module RRRSpec
             ])
           end
         end
+
+        context "when the taskset is not persisted" do
+          it "returns 404" do
+            get "/v2/tasksets/#{taskset.key}/trials"
+            expect(last_response.status).to eq(404)
+          end
+        end
       end
 
       describe 'GET /v2/tasksets/:taskset_id/worker_logs' do
@@ -280,6 +301,13 @@ module RRRSpec
                 "log" => "worker_log log body",
               },
             ])
+          end
+        end
+
+        context "when the taskset is not persisted" do
+          it "returns 404" do
+            get "/v2/tasksets/0/worker_logs"
+            expect(last_response.status).to eq(404)
           end
         end
       end
@@ -305,6 +333,13 @@ module RRRSpec
                 "log" => "slave log body",
               },
             ])
+          end
+        end
+
+        context "when the taskset is not persisted" do
+          it "returns 404" do
+            get "/v2/tasksets/0/slaves"
+            expect(last_response.status).to eq(404)
           end
         end
       end
