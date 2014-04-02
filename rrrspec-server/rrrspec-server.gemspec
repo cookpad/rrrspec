@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "activerecord-import", "~> 0.4.1"
   spec.add_dependency "activesupport"
   spec.add_dependency "bundler"
+  spec.add_dependency "facter"
   spec.add_dependency "redis"
   spec.add_dependency "rrrspec-client"
   spec.add_dependency "thor"
