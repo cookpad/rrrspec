@@ -226,8 +226,8 @@ $(->
     showBody: ->
       unless @model.outputsFetched()
         @model.fetchOutput().done(=>
-          @$('.stdout').html(@model.get('stdout'))
-          @$('.stderr').html(@model.get('stderr'))
+          @$('.stdout').text(@model.get('stdout'))
+          @$('.stderr').text(@model.get('stderr'))
         )
 
     scrollIntoView: -> $('html, body').animate(scrollTop: @$el.offset().top)
