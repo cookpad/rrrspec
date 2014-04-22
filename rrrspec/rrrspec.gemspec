@@ -1,5 +1,5 @@
 # coding: utf-8
-version = "0.2.0"
+version = "0.2.1"
 
 Gem::Specification.new do |spec|
   spec.name          = "rrrspec"
