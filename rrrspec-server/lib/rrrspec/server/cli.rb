@@ -30,6 +30,7 @@ module RRRSpec
           Thread.fork { Dispatcher.work_loop }
           Thread.fork { Arbiter.work_loop }
           Thread.fork { Persister.work_loop }
+          Thread.fork { StatisticsUpdater.work_loop }
           Kernel.sleep
         end
       end

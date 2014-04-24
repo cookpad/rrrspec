@@ -87,6 +87,30 @@ module RRRSpec
     end
   end
 
+  module StatisticsUpdaterQueue
+    STATISTICS_UPDATER_QUEUE_KEY = 'rrrspec:statistics_updater_queue'
+
+    module_function
+
+    # Public: Request the taskset to be added to statistics.
+    def enqueue(taskset, recalculate = false)
+      RRRSpec.redis.rpush(STATISTICS_UPDATER_QUEUE_KEY,
+        {taskset: taskset.key, recalculate: recalculate}.to_json)
+    end
+
+    # Public: Wait for the update request.
+    def dequeue
+      _, line = RRRSpec.redis.blpop(STATISTICS_UPDATER_QUEUE_KEY, 0)
+      request = JSON.parse(line)
+
+      [Taskset.new(request['taskset']), request['recalculate']]
+    end
+
+    def empty?
+      RRRSpec.redis.llen(STATISTICS_UPDATER_QUEUE_KEY) == 0
+    end
+  end
+
   module ActiveTaskset
     ACTIVE_TASKSET_KEY = 'rrrspec:active_taskset'
 

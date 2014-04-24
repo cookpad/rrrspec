@@ -32,8 +32,9 @@ module RRRSpec
             create_api_cache(taskset, RRRSpec.configuration.json_cache_path)
           end
           taskset.expire(PERSISTED_RESIDUE_SEC)
-          update_estimate_sec(taskset)
         end
+
+        StatisticsUpdaterQueue.enqueue(taskset)
       rescue
         RRRSpec.logger.error($!)
       end
@@ -145,33 +146,6 @@ module RRRSpec
         json_path = File.join(path, 'v1', 'tasksets', taskset.key.gsub(':', '-'))
         IO.write(json_path, json)
         Zlib::GzipWriter.open(json_path + ".gz") { |gz| gz.write(json) }
-      end
-
-      ESTIMATION_FIELDS = [
-        "`spec_file`",
-        "avg(UNIX_TIMESTAMP(`trials`.`finished_at`)-UNIX_TIMESTAMP(`trials`.`started_at`)) as `avg`",
-        # "avg(`trials`.`finished_at`-`trials`.`started_at`) as `avg`",
-      ]
-
-      def update_estimate_sec(taskset)
-        start = Time.now 
-
-        p_obj = Persistence::Taskset.where(key: taskset.key).first
-        taskset_class = p_obj.taskset_class
-        query = Persistence::Task.joins(:trials).joins(:taskset).
-          select(ESTIMATION_FIELDS).
-          where('tasksets.taskset_class' => taskset_class).
-          where('trials.status' => ["passed", "pending"]).
-          group('spec_file')
-        estimation = {}
-        query.each do |row|
-          estimation[row.spec_file] = row.avg.to_i
-        end
-        unless estimation.empty?
-          TasksetEstimation.update_estimate_secs(taskset_class, estimation)
-        end
-
-        RRRSpec.logger.info("Updated estimate sec for taskset #{taskset.key} (total: #{Time.now - start} seconds)")
       end
     end
   end
