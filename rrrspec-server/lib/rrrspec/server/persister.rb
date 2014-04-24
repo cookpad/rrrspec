@@ -154,6 +154,8 @@ module RRRSpec
       ]
 
       def update_estimate_sec(taskset)
+        start = Time.now 
+
         p_obj = Persistence::Taskset.where(key: taskset.key).first
         taskset_class = p_obj.taskset_class
         query = Persistence::Task.joins(:trials).joins(:taskset).
@@ -168,6 +170,8 @@ module RRRSpec
         unless estimation.empty?
           TasksetEstimation.update_estimate_secs(taskset_class, estimation)
         end
+
+        RRRSpec.logger.info("Updated estimate sec for taskset #{taskset.key} (total: #{Time.now - start} seconds)")
       end
     end
   end
