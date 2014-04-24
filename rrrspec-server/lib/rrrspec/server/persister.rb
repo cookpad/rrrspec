@@ -45,6 +45,9 @@ module RRRSpec
         taskset_finished_at = taskset.finished_at
         return if taskset_finished_at.blank?
 
+        start = lap = Time.now
+        RRRSpec.logger.debug("Persisting taskset #{taskset.key}")
+
         p_taskset = ActiveRecord::Base.transaction do
           h = taskset.to_h
           h.delete('tasks')
@@ -52,6 +55,9 @@ module RRRSpec
           h.delete('worker_logs')
           Persistence::Taskset.create(h)
         end
+
+        RRRSpec.logger.debug("[persist #{taskset.key}] taskset (lap: #{Time.now - lap}, total: #{Time.now - start})")
+        lap = Time.now
 
         ActiveRecord::Base.transaction do
           p_slaves = taskset.slaves.map do |slave|
@@ -65,6 +71,9 @@ module RRRSpec
           p_slaves.each { |p_slave| p_slave.run_callbacks(:save) {} }
         end
 
+        RRRSpec.logger.debug("[persist #{taskset.key}] slaves (lap: #{Time.now - lap}, total: #{Time.now - start})")
+        lap = Time.now
+
         ActiveRecord::Base.transaction do
           p_tasks = taskset.tasks.map do |task|
             h = task.to_h
@@ -77,6 +86,9 @@ module RRRSpec
           Persistence::Task.import(p_tasks)
           p_tasks.each { |p_task| p_task.run_callbacks(:save) {} }
         end
+
+        RRRSpec.logger.debug("[persist #{taskset.key}] tasks (lap: #{Time.now - lap}, total: #{Time.now - start})")
+        lap = Time.now
 
         p_slaves = {}
         p_taskset.slaves.each do |p_slave|
@@ -102,6 +114,9 @@ module RRRSpec
           p_trials.each { |p_trial| p_trial.run_callbacks(:save) {} }
         end
 
+        RRRSpec.logger.debug("[persist #{taskset.key}] trials (lap: #{Time.now - lap}, total: #{Time.now - start})")
+        lap = Time.now
+
         ActiveRecord::Base.transaction do
           p_worker_logs = taskset.worker_logs.map do |worker_log|
             h = worker_log.to_h
@@ -115,6 +130,11 @@ module RRRSpec
           Persistence::WorkerLog.import(p_worker_logs)
           p_worker_logs.each { |p_worker_log| p_worker_log.run_callbacks(:save) {} }
         end
+
+        RRRSpec.logger.debug("[persist #{taskset.key}] worker_logs (lap: #{Time.now - lap}, total: #{Time.now - start})")
+        lap = Time.now
+
+        RRRSpec.logger.info("Taskset #{taskset.key} persisted (total: #{Time.now - start} seconds)")
       end
 
       def create_api_cache(taskset, path)
