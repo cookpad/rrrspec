@@ -47,6 +47,7 @@ module RRRSpec
         return if taskset_finished_at.blank?
 
         RRRSpec.logger.debug("Persisting taskset #{taskset.key}")
+        start = Time.now
 
         p_taskset = ActiveRecord::Base.transaction do
           h = taskset.to_h
