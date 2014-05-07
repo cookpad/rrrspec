@@ -4,9 +4,12 @@ require 'oj'
 
 module RRRSpec
   module Web
+    DEFAULT_PER_PAGE = 10
+
     class API < Grape::API
       version 'v1', using: :path
       format :json
+      set :per_page, DEFAULT_PER_PAGE
 
       resource :tasksets do
         desc "Return active tasksets"
@@ -63,6 +66,7 @@ module RRRSpec
       version 'v2', using: :path
       format :json
       formatter :json, OjFormatter
+      set :per_page, DEFAULT_PER_PAGE
 
       rescue_from(ActiveRecord::RecordNotFound) do
         [404, {}, ['']]
