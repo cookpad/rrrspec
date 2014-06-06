@@ -19,13 +19,16 @@ trap "before_exit" EXIT
 RRRSPEC_SERVERS_OPTIONS="--config=rrrspec_servers.rb --no-daemonize "
 RRRSPEC_CLIENTS_OPTIONS="--config=rrrspec_clients.rb"
 
+RRRSPEC_VERSION=${RRRSPEC_VERSION:-0.2.1}
+RUBY_VERSION=${RUBY_VERSION:-2.1.0}
+
 mkdir -p vendor/cache
-cd ../rrrspec-client && bundle exec rake build && cp pkg/rrrspec-client-0.2.0.gem ../local_test/vendor/cache
-cd ../rrrspec-server && bundle exec rake build && cp pkg/rrrspec-server-0.2.0.gem ../local_test/vendor/cache
+cd ../rrrspec-client && bundle exec rake build && cp pkg/rrrspec-client-$RRRSPEC_VERSION.gem ../local_test/vendor/cache
+cd ../rrrspec-server && bundle exec rake build && cp pkg/rrrspec-server-$RRRSPEC_VERSION.gem ../local_test/vendor/cache
 cd ../local_test
 
-rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-client-0.2.0.gemspec
-rm -rf vendor/bundler/ruby/2.0.0/specifications/rrrspec-server-0.2.0.gemspec
+rm -f vendor/bundler/ruby/$RUBY_VERSION/specifications/rrrspec-client-$RRRSPEC_VERSION.gemspec
+rm -f vendor/bundler/ruby/$RUBY_VERSION/specifications/rrrspec-server-$RRRSPEC_VERSION.gemspec
 
 set -x
 bundle install --path vendor/bundler
