@@ -42,7 +42,7 @@ module RRRSpec
 
           it 'assignes worker upto the max_workers' do
             Dispatcher.work
-            expect(worker1.queue_empty?).to be_true
+            expect(worker1).to be_queue_empty
             workers = [worker1, worker2, worker3, worker4]
             expect(workers.count { |worker| worker.queue_empty? }).to eq(2)
           end

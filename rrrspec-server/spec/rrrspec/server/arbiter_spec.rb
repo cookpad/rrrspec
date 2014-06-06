@@ -29,10 +29,10 @@ module RRRSpec
           it 'cancels the taskset' do
             Arbiter.cancel(taskset)
             expect(taskset.status).to eq('cancelled')
-            expect(taskset.queue_empty?).to be_true
+            expect(taskset).to be_queue_empty
             expect(taskset.finished_at).not_to be_nil
             expect(ActiveTaskset.list).not_to include(taskset)
-            expect(PersisterQueue.empty?).to be_false
+            expect(PersisterQueue).not_to be_empty
           end
         end
 
@@ -43,7 +43,7 @@ module RRRSpec
             Arbiter.cancel(taskset)
             expect(taskset.status).not_to eq('cancelled')
             expect(ActiveTaskset.list).not_to include(taskset)
-            expect(PersisterQueue.empty?).to be_false
+            expect(PersisterQueue).not_to be_empty
           end
         end
       end
@@ -59,7 +59,7 @@ module RRRSpec
           it 'does nothing' do
             Arbiter.check(taskset)
             expect(ActiveTaskset.list).not_to include(taskset)
-            expect(PersisterQueue.empty?).to be_false
+            expect(PersisterQueue).not_to be_empty
           end
         end
 
@@ -90,7 +90,7 @@ module RRRSpec
                 expect(taskset.status).to eq('running')
                 expect(taskset.finished_at).to be_blank
                 expect(ActiveTaskset.list).to include(taskset)
-                expect(PersisterQueue.empty?).to be_true
+                expect(PersisterQueue).to be_empty
               end
             end
           end
@@ -106,7 +106,7 @@ module RRRSpec
                 expect(taskset.status).to eq("succeeded")
                 expect(taskset.finished_at).not_to be_blank
                 expect(ActiveTaskset.list).not_to include(taskset)
-                expect(PersisterQueue.empty?).to be_false
+                expect(PersisterQueue).not_to be_empty
               end
             end
 
@@ -118,7 +118,7 @@ module RRRSpec
                 expect(taskset.status).to eq("failed")
                 expect(taskset.finished_at).not_to be_nil
                 expect(ActiveTaskset.list).not_to include(taskset)
-                expect(PersisterQueue.empty?).to be_false
+                expect(PersisterQueue).not_to be_empty
               end
             end
           end
@@ -295,10 +295,10 @@ module RRRSpec
           it 'fails the taskset' do
             Arbiter.fail(taskset)
             expect(taskset.status).to eq('failed')
-            expect(taskset.queue_empty?).to be_true
+            expect(taskset).to be_queue_empty
             expect(taskset.finished_at).not_to be_nil
             expect(ActiveTaskset.list).not_to include(taskset)
-            expect(PersisterQueue.empty?).to be_false
+            expect(PersisterQueue).not_to be_empty
           end
         end
 
@@ -309,7 +309,7 @@ module RRRSpec
             Arbiter.fail(taskset)
             expect(taskset.status).not_to eq('failed')
             expect(ActiveTaskset.list).not_to include(taskset)
-            expect(PersisterQueue.empty?).to be_false
+            expect(PersisterQueue).not_to be_empty
           end
         end
       end
@@ -352,7 +352,7 @@ module RRRSpec
               expect(trial.status).to eq('error')
               expect(task1.status).to eq('failed')
               expect(taskset.tasks_left).not_to include(task1)
-              expect(taskset.queue_empty?).to be_true
+              expect(taskset).to be_queue_empty
               expect(taskset.succeeded_count).to eq(0)
               expect(taskset.failed_count).to eq(1)
             end
@@ -380,7 +380,7 @@ module RRRSpec
             Arbiter.trial(trial)
             expect(task1.status).to eq('passed')
             expect(taskset.tasks_left).not_to include(task1)
-            expect(taskset.queue_empty?).to be_true
+            expect(taskset).to be_queue_empty
             expect(taskset.succeeded_count).to eq(1)
             expect(taskset.failed_count).to eq(0)
           end
@@ -393,7 +393,7 @@ module RRRSpec
             Arbiter.trial(trial)
             expect(task1.status).to eq('pending')
             expect(taskset.tasks_left).not_to include(task1)
-            expect(taskset.queue_empty?).to be_true
+            expect(taskset).to be_queue_empty
             expect(taskset.succeeded_count).to eq(1)
             expect(taskset.failed_count).to eq(0)
           end
@@ -427,7 +427,7 @@ module RRRSpec
                   expect(trial.status).to eq('failed')
                   expect(task1.status).to eq('failed')
                   expect(taskset.tasks_left).not_to include(task1)
-                  expect(taskset.queue_empty?).to be_true
+                  expect(taskset).to be_queue_empty
                   expect(taskset.succeeded_count).to eq(0)
                   expect(taskset.failed_count).to eq(1)
                 end
@@ -438,7 +438,7 @@ module RRRSpec
                   Arbiter.trial(trial)
                   expect(task1.status).to be_blank
                   expect(taskset.tasks_left).to include(task1)
-                  expect(taskset.queue_empty?).to be_true
+                  expect(taskset).to be_queue_empty
                   expect(taskset.succeeded_count).to eq(0)
                   expect(taskset.failed_count).to eq(0)
                 end
@@ -474,7 +474,7 @@ module RRRSpec
               Arbiter.trial(trial)
               expect(task1.status).to eq('failed')
               expect(taskset.tasks_left).not_to include(task1)
-              expect(taskset.queue_empty?).to be_true
+              expect(taskset).to be_queue_empty
               expect(taskset.succeeded_count).to eq(0)
               expect(taskset.failed_count).to eq(1)
             end
