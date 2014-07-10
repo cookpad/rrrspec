@@ -1,4 +1,7 @@
 require 'redis'
+# XXX: With activesupport 4.1, we cannot require active_support/core_ext due to
+# "uninitialized constant ActiveSupport::Autoload (NameError)".
+require 'active_support/dependencies/autoload'
 require 'active_support/core_ext'
 require 'active_support/time'
 require 'socket'
