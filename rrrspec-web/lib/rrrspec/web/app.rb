@@ -9,7 +9,7 @@ module RRRSpec
     class App < Sinatra::Base
       set :assets_precompile, %w(application.css tasksets.js index.js)
       set :assets_prefix, [
-        "#{Gem::Specification.find_by_name('bootstrap-sass').gem_dir}/vendor/assets",
+        "#{Gem::Specification.find_by_name('bootstrap-sass').gem_dir}/assets",
         File.expand_path('../../../../assets', __FILE__),
       ]
 
