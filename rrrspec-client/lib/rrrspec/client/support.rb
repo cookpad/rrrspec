@@ -4,7 +4,7 @@ module RRRSpec
       module_function
 
       def start_taskset(conf, rsync_name)
-        $stderr.puts '1/3) Making a package...'
+        $stderr.puts '1/3) Start rsync...'
         if is_using_rsync?(rsync_name)
           $stderr.puts 'It seems you are running rrrspec already'
           $stderr.puts 'Please wait until the previous run finishes'
@@ -15,7 +15,7 @@ module RRRSpec
           exit 1
         end
 
-        $stderr.puts '2/3) Uploading the package...'
+        $stderr.puts '2/3) Creating a new taskset...'
         taskset = Taskset.create(
           rsync_name,
           conf.setup_command,
