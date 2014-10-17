@@ -75,7 +75,14 @@ module RRRSpec
       # For Index
 
       get '/tasksets/actives' do
-        ActiveTaskset.list
+        ActiveTaskset.list.map do |taskset|
+          {
+            key: taskset.key,
+            status: taskset.status,
+            rsync_name: taskset.rsync_name,
+            created_at: taskset.created_at.iso8601,
+          }
+        end
       end
 
       get '/tasksets/recents' do
