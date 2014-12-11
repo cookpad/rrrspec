@@ -15,7 +15,7 @@ module RRRSpec
       if stderr_path = RRRSpec.configuration.stderr_path
         $stderr.reopen(stderr_path, 'a')
       end
-      Process.daemon
+      Process.daemon(false, true)
       File.write(pidfile, Process.pid.to_s)
       File.umask(0)
       setup_signal_handlers
