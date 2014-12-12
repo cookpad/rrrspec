@@ -8,6 +8,7 @@ module RRRSpec
       attr_accessor :json_cache_path
       attr_accessor :daemonize, :pidfile, :user
       attr_accessor :stdout_path, :stderr_path
+      attr_accessor :monitor
 
       def initialize
         super()
@@ -36,6 +37,7 @@ module RRRSpec
       attr_accessor :working_dir, :worker_type, :slave_processes
       attr_accessor :daemonize, :pidfile, :user
       attr_accessor :stdout_path, :stderr_path
+      attr_accessor :monitor
 
       def initialize
         super()
