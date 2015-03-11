@@ -79,8 +79,17 @@ module RRRSpec
         exit(1) unless taskset.exist?
 
         rd, wt = IO.pipe
-        Signal.trap(:TERM) { wt.write("1") }
-        Signal.trap(:INT) { wt.write("1") }
+
+        cancelled = false
+        do_cancel = proc {
+          exit(1) if cancelled
+
+          $stderr.puts "Cancelling taskset... (will force quit on next signal)"
+          wt.write '1'
+          cancelled = true
+        }
+        Signal.trap(:TERM, do_cancel)
+        Signal.trap(:INT, do_cancel)
 
         loop do
           rs, ws, = IO.select([rd], [], [], options[:pollsec])
@@ -89,6 +98,7 @@ module RRRSpec
           elsif rs.size != 0
             rs[0].getc
             taskset.cancel
+            break
           end
         end
       end
