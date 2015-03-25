@@ -68,7 +68,16 @@ module RRRSpec
       def nodes
         setup(Configuration.new)
         puts "Workers:"
-        Worker.list.each { |worker| puts "\t#{worker.key}" }
+        workers = Hash.new { |h, k| h[k] = [] }
+        Worker.list.each do |worker|
+          workers[worker.worker_type] << worker.key
+        end
+        workers.keys.sort.each do |k|
+          puts "  #{k}:"
+          workers[k].sort.each do |name|
+            puts "    #{name}"
+          end
+        end
       end
 
       option :pollsec, type: :numeric, default: WAIT_POLLING_SEC
