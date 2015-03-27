@@ -1,3 +1,16 @@
+# 0.2.3
+## client
+- `rrrspec waitfor` quits right after cancel
+- `rrrspec nodes` shows worker type with node name
+- Fix NameError with activesupport 4.2.x
+
+## server
+- Support stdout and stderr redirection on daemonize
+- Fix error on automatic restart
+
+## web
+- Display details of active tasksets
+
 # 0.2.2
 ## client
 - Fix for activesupport 4.1.x
