@@ -37,7 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "api-pagination"
   spec.add_dependency "bootstrap-sass", ">= 3.2"
   spec.add_dependency "coffee-script", "~> 2.2.0"
-  spec.add_dependency "grape"
+  spec.add_dependency "grape", '~> 0.9.0'
   spec.add_dependency "haml", "~> 4.0.3"
   spec.add_dependency "kaminari", "~> 0.15.0"
   spec.add_dependency "oj"
