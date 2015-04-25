@@ -13,6 +13,7 @@ namespace :rrrspec do
     end
 
     namespace :db do
+      desc "create the database"
       task :create => 'rrrspec:server:server_config' do
         config = RRRSpec.configuration.persistence_db
 
@@ -23,7 +24,13 @@ namespace :rrrspec do
             ActiveRecord::Base.connection
           end
         elsif config[:adapter] =~ /mysql/
-          ActiveRecord::Base.connection.create_database(config[:database])
+          ActiveRecord::Base.establish_connection(config.except(:database))
+          begin
+            ActiveRecord::Base.connection.create_database(config[:database])
+          rescue ActiveRecord::StatementInvalid
+            # Ignore creation error
+          end
+          ActiveRecord::Base.establish_connection(config)
         else
           fail 'unknown database adapter'
         end
