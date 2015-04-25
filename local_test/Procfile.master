@@ -1,0 +1,2 @@
+master: cd ../rrrspec-server && bundle exec bin/rrrspec-server server --config /app/local_test/server_config.rb --no-daemonize
+web: cd ../rrrspec-web && bundle exec unicorn -p 3000

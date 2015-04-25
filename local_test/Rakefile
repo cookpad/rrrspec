@@ -1,1 +1,0 @@
-load "#{Gem::Specification.find_by_name('rrrspec-server').gem_dir}/tasks/db.rake"
