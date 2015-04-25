@@ -94,7 +94,7 @@ Create 'rrrspec-server-config.rb'
         host: 'localhost'
       }
       conf.json_cache_path = '/vol/rrrspec-api-cache'
-      conf.execute_log_text_path = "/vol/rrrspec-log-texts"
+      conf.execute_log_text_path = '/vol/rrrspec-log-texts'
     end
 
     RRRSpec.configure(:worker) do |conf|
