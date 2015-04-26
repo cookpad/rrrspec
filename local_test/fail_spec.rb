@@ -10,4 +10,8 @@ describe 'test2' do
   it 'will be pending' do
     pending
   end
+
+  it 'will be skipped' do
+    skip
+  end
 end
