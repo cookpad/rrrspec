@@ -58,9 +58,16 @@ module RRRSpec
         outbuf, errbuf = exc_safe_replace_stdouts do
           @configuration.output_stream = $stdout
           @configuration.error_stream = $stderr
-          @configuration.formatters << RSpec::Core::Formatters::BaseTextFormatter.new($stdout)
-          formatters.each do |formatter|
-            @configuration.formatters << formatter
+          @configuration.add_formatter(RSpec::Core::Formatters::BaseTextFormatter)
+          if @configuration.respond_to?(:formatter_loader)
+            # RSpec >= 2.99
+            formatters.each do |formatter|
+              @configuration.formatter_loader.formatters << formatter
+            end
+          else
+            formatters.each do |formatter|
+              @configuration.formatters << formatter
+            end
           end
           @configuration.reporter.report(
             @world.example_count,
