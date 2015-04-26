@@ -127,6 +127,15 @@ Create 'rrrspec-server-config.rb'
 
     $ bundle exec rrrspec-client start
 
+## Local test
+You can try RRRSpec locally using Docker.
+
+```
+% docker-compose up
+% docker-compose run worker local_test/run_client.sh
+% xdg-open http://localhost:3000/
+```
+
 ## Contributing
 
 See HACKING.md for the internal structure.
