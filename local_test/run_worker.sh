@@ -2,7 +2,8 @@
 set -ex
 
 mkdir -m700 -p /root/.ssh
-cp local_test/id_rsa.rrrspec /root/.ssh/id_rsa
+chmod 600 local_test/id_rsa.rrrspec
+cp -p local_test/id_rsa.rrrspec /root/.ssh/id_rsa
 cp local_test/ssh_config /root/.ssh/config
 
 cd rrrspec-server
