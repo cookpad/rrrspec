@@ -16,19 +16,21 @@ RRRSpec.configure(:client) do |conf|
     '--delete',
     '--exclude=tmp',
   ].join(' ')
-  conf.packaging_dir = File.expand_path("..", __FILE__)
+  conf.packaging_dir = File.expand_path("../..", __FILE__)
   conf.spec_files = lambda do
     [
-      'success_spec.rb',
-      'fail_spec.rb',
-      'timeout_spec.rb',
+      'local_test/success_spec.rb',
+      'local_test/fail_spec.rb',
+      'local_test/timeout_spec.rb',
     ]
   end
   conf.setup_command = <<-END
+    cd local_test
     bundle install
   END
   conf.slave_command = <<-END
-    bundle exec rrrspec-client slave
+    cd local_test
+    bundle exec ../rrrspec-client/bin/rrrspec-client slave
   END
   conf.worker_type = 'default'
   conf.taskset_class = 'rrrspec/local_test'
