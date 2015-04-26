@@ -9,6 +9,7 @@ describe 'test2' do
 
   it 'will be pending' do
     pending
+    expect(1).to eq(2)
   end
 
   it 'will be skipped' do
