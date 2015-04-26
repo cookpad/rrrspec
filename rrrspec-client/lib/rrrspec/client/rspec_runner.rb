@@ -56,6 +56,8 @@ module RRRSpec
       def run(*formatters)
         status = false
         outbuf, errbuf = exc_safe_replace_stdouts do
+          @configuration.output_stream = $stdout
+          @configuration.error_stream = $stderr
           @configuration.formatters << RSpec::Core::Formatters::BaseTextFormatter.new($stdout)
           formatters.each do |formatter|
             @configuration.formatters << formatter
