@@ -58,7 +58,7 @@ module RRRSpec
           @configuration.error_stream = $stderr
           @configuration.add_formatter(RSpec::Core::Formatters::BaseTextFormatter)
           formatters.each do |formatter|
-            @configuration.formatter_loader.formatters << formatter
+            @configuration.add_formatter(formatter)
           end
           @configuration.reporter.report(@world.example_count) do |reporter|
             @world.ordered_example_groups.each do |example_group|

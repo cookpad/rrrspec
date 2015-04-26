@@ -1,6 +1,7 @@
 require 'set'
 require 'extreme_timeout'
 require 'timeout'
+require 'rspec/core/formatters'
 
 module RRRSpec
   module Client
@@ -66,7 +67,7 @@ module RRRSpec
 
           soft_timeout_sec, hard_timeout_sec = spec_timeout_sec(task)
 
-          formatter = RedisReportingFormatter.new
+          formatter = RedisReportingFormatter
           trial.start
           status, outbuf, errbuf = ExtremeTimeout::timeout(
             hard_timeout_sec, TIMEOUT_EXITCODE
@@ -87,41 +88,62 @@ module RRRSpec
       end
 
       class RedisReportingFormatter
-        attr_reader :passed, :pending, :failed
+        RSpec::Core::Formatters.register(self, :example_passed, :example_pending, :example_failed)
 
-        def initialize
-          @passed = 0
-          @pending = 0
-          @failed = 0
-          @timeout = false
+        def initialize(_output)
+          self.class.reset
         end
 
-        def example_passed(example)
-          @passed += 1
+        def example_passed(_notification)
+          self.class.example_passed
         end
 
-        def example_pending(example)
-          @pending += 1
+        def example_pending(_notification)
+          self.class.example_pending
         end
 
-        def example_failed(example)
-          @failed += 1
-          if example.exception.is_a?(SoftTimeoutException)
-            @timeout = true
+        def example_failed(notification)
+          self.class.example_failed(notification)
+        end
+
+        module ClassMethods
+          attr_reader :passed, :pending, :failed
+
+          def reset
+            @passed = 0
+            @pending = 0
+            @failed = 0
+            @timeout = false
+          end
+
+          def example_passed
+            @passed += 1
+          end
+
+          def example_pending
+            @pending += 1
+          end
+
+          def example_failed(notification)
+            @failed += 1
+            if notification.exception.is_a?(SoftTimeoutException)
+              @timeout = true
+            end
+          end
+
+          def status
+            if @timeout
+              'timeout'
+            elsif @failed != 0
+              'failed'
+            elsif @pending != 0
+              'pending'
+            else
+              'passed'
+            end
           end
         end
-
-        def status
-          if @timeout
-            'timeout'
-          elsif @failed != 0
-            'failed'
-          elsif @pending != 0
-            'pending'
-          else
-            'passed'
-          end
-        end
+        extend ClassMethods
       end
     end
   end
