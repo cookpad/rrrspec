@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["draftcode@gmail.com"]
   spec.description   = "Execute RSpec in a distributed manner"
   spec.summary       = "Execute RSpec in a distributed manner"
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/cookpad/rrrspec"
   spec.license       = "MIT"
 
   gemspec_dir = File.expand_path('..', __FILE__)

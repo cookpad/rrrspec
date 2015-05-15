@@ -8,10 +8,10 @@ Gem::Specification.new do |spec|
   spec.email         = ["draftcode@gmail.com"]
   spec.description   = "Execute RSpec in a distributed manner"
   spec.summary       = "Execute RSpec in a distributed manner"
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/cookpad/rrrspec"
   spec.license       = "MIT"
 
-  spec.add_development_dependency "bundler", "~> 1.4"
+  spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
 
   %w[client server web].each do |name|
