@@ -1,3 +1,13 @@
+# 0.2.4
+## client
+- Fix for RSpec 2.99
+
+## server
+- Nothing
+
+## web
+- Fix api-pagination dependency
+
 # 0.2.3
 ## client
 - `rrrspec waitfor` quits right after cancel
