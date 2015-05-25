@@ -114,12 +114,13 @@ module RRRSpec
 
       option :'failure-exit-code', type: :numeric, default: 1
       option :verbose, type: :boolean, default: false
+      option :'show-errors', type: :boolean, default: false
       desc 'show', 'show the result of the taskset'
       def show(taskset_id)
         setup(Configuration.new)
         taskset = Taskset.new(taskset_id)
         exit 1 unless taskset.exist?
-        Support.show_result(taskset, options[:verbose])
+        Support.show_result(taskset, options[:verbose], options[:'show-errors'])
 
         if taskset.status != 'succeeded'
           exit options[:'failure-exit-code']
