@@ -1,3 +1,14 @@
+# 0.3.0
+## client
+- RRRSpec now requires RSpec 3.x
+    - Drop support for RSpec 2.x
+
+## server
+- Nothing
+
+## web
+- Nothing
+
 # 0.2.4
 ## client
 - Fix for RSpec 2.99
