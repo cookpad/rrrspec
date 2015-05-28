@@ -6,9 +6,7 @@ module RRRSpec
     class RSpecRunner
       def initialize
         @options = RSpec::Core::ConfigurationOptions.new([])
-        @options.parse_options
         @configuration = RSpec.configuration
-        @configuration.setup_load_path_and_require([])
         @world = RSpec.world
         @before_suite_run = false
       end
@@ -39,7 +37,7 @@ module RRRSpec
             @configuration.load_spec_files
             @world.announce_filters
             unless @before_suite_run
-              @configuration.run_hook(:before, :suite)
+              run_before_suite_hooks
               @before_suite_run = true
             end
             status = true
@@ -59,21 +57,11 @@ module RRRSpec
           @configuration.output_stream = $stdout
           @configuration.error_stream = $stderr
           @configuration.add_formatter(RSpec::Core::Formatters::BaseTextFormatter)
-          if @configuration.respond_to?(:formatter_loader)
-            # RSpec >= 2.99
-            formatters.each do |formatter|
-              @configuration.formatter_loader.formatters << formatter
-            end
-          else
-            formatters.each do |formatter|
-              @configuration.formatters << formatter
-            end
+          formatters.each do |formatter|
+            @configuration.add_formatter(formatter)
           end
-          @configuration.reporter.report(
-            @world.example_count,
-            @configuration.randomize? ? @configuration.seed : nil
-          ) do |reporter|
-            @world.example_groups.ordered.each do |example_group|
+          @configuration.reporter.report(@world.example_count) do |reporter|
+            @world.ordered_example_groups.each do |example_group|
               example_group.run(reporter)
             end
           end
@@ -86,6 +74,16 @@ module RRRSpec
       def reset
         @world.example_groups.clear
         @configuration.reset
+      end
+
+      private
+
+      def run_before_suite_hooks
+        hooks = @configuration.instance_variable_get(:@before_suite_hooks)
+        hook_context = RSpec::Core::SuiteHookContext.new
+        hooks.each do |h|
+          h.run(hook_context)
+        end
       end
     end
   end

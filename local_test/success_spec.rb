@@ -1,5 +1,5 @@
 describe 'test1' do
   it 'will be succeeded' do
-    1.should == 1
+    expect(1).to eq(1)
   end
 end

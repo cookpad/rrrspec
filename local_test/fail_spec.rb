@@ -4,10 +4,15 @@ describe 'test2' do
   end
 
   it 'will be succeeded' do
-    1.should == 1
+    expect(1).to eq(1)
   end
 
   it 'will be pending' do
     pending
+    expect(1).to eq(2)
+  end
+
+  it 'will be skipped' do
+    skip
   end
 end
