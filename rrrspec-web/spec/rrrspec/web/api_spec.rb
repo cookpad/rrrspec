@@ -150,7 +150,7 @@ module RRRSpec
           get "/v2/tasksets/actives"
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body)).to eq([
-            { 'key' => taskset.key },
+            { 'key' => taskset.key, 'status' => taskset.status, 'rsync_name' => taskset.rsync_name, 'created_at' => taskset.created_at.iso8601 },
           ])
         end
       end
