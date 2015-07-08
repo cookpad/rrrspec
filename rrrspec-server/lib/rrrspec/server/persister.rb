@@ -1,4 +1,3 @@
-require 'zlib'
 require 'activerecord-import'
 require 'active_support/inflector'
 ActiveSupport::Inflector::Inflections.instance.singular('Slaves', 'Slave')
@@ -28,9 +27,6 @@ module RRRSpec
 
         ActiveRecord::Base.connection_pool.with_connection do
           persist(taskset)
-          if RRRSpec.configuration.json_cache_path
-            create_api_cache(taskset, RRRSpec.configuration.json_cache_path)
-          end
           taskset.expire(PERSISTED_RESIDUE_SEC)
         end
 
@@ -121,16 +117,6 @@ module RRRSpec
         end
 
         RRRSpec.logger.info("Taskset #{taskset.key} persisted (#{Time.now - start} seconds taken)")
-      end
-
-      def create_api_cache(taskset, path)
-        p_obj = Persistence::Taskset.where(key: taskset.key).full.first
-        json = JSON.generate(p_obj.as_full_json.update('is_full' => true))
-
-        FileUtils.mkdir_p(File.join(path, 'v1', 'tasksets'))
-        json_path = File.join(path, 'v1', 'tasksets', taskset.key.gsub(':', '-'))
-        IO.write(json_path, json)
-        Zlib::GzipWriter.open(json_path + ".gz") { |gz| gz.write(json) }
       end
     end
   end
