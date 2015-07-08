@@ -114,7 +114,7 @@ module RRRSpec
             get "/v1/tasksets/#{taskset.key}"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq(
-              JSON.parse(JSON.generate(Server::Persistence::Taskset.first.as_full_json)).update("is_full" => true)
+              JSON.parse(Server::Persistence::Taskset.first.as_full_json.to_json).update("is_full" => true)
             )
           end
         end

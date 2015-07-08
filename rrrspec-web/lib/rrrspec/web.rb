@@ -9,6 +9,7 @@ require 'rrrspec/web/app'
 require 'rrrspec/web/configuration'
 
 RRRSpec.configuration = RRRSpec::Web::WebConfiguration.new
+ActiveSupport::JSON::Encoding.time_precision = 0
 
 module RRRSpec
   module Web
