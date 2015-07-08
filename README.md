@@ -93,7 +93,6 @@ Create 'rrrspec-server-config.rb'
         pool: 5,
         host: 'localhost'
       }
-      conf.json_cache_path = '/vol/rrrspec-api-cache'
       conf.execute_log_text_path = '/vol/rrrspec-log-texts'
     end
 

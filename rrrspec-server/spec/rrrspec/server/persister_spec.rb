@@ -120,27 +120,6 @@ module RRRSpec
           end
         end
       end
-
-      describe '.create_api_cache' do
-        before { Persister.persist(@taskset) }
-
-        it 'writes cached json file' do
-          Dir.mktmpdir do |dir|
-            Persister.create_api_cache(@taskset, dir)
-            json_path = File.join(dir, 'v1', 'tasksets', @taskset.key.gsub(':', '-'))
-            expect(File).to exist(json_path)
-            expect(File).to exist(json_path + ".gz")
-
-            p_taskset = Persistence::Taskset.first
-            expect(IO.read(json_path)).to eq(
-              JSON.generate(p_taskset.as_full_json.update('is_full' => true))
-            )
-            expect(Zlib::GzipReader.open(json_path + ".gz").read).to eq(
-              IO.read(json_path)
-            )
-          end
-        end
-      end
     end
   end
 end
