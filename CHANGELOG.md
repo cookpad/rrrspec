@@ -1,3 +1,13 @@
+# 0.4.0
+## client
+- Nothing
+
+## server
+- Drop `json_cache_path` configuration
+
+## web
+- Drop API v1 support
+
 # 0.3.0
 ## client
 - RRRSpec now requires RSpec 3.x
