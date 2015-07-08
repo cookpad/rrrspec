@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module RRRSpec
   module Server
-    describe StatisticsUpdater do
+    RSpec.describe StatisticsUpdater do
       before do
         RRRSpec.configuration = ServerConfiguration.new
         RRRSpec.configuration.redis = @redis

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module RRRSpec
   module Server
-    describe Persister do
+    RSpec.describe Persister do
       before do
         RRRSpec.configuration = ServerConfiguration.new
         RRRSpec.configuration.redis = @redis

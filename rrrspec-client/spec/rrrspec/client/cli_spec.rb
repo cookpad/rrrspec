@@ -3,7 +3,7 @@ require 'rrrspec/client/cli'
 
 module RRRSpec
   module Client
-    describe CLI do
+    RSpec.describe CLI do
       before do
         RRRSpec.configuration = Configuration.new
         RRRSpec.configuration.redis = @redis

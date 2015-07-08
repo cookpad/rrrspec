@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module RRRSpec
-  describe Taskset do
+  RSpec.describe Taskset do
     before do
       RRRSpec.configuration = Configuration.new
       RRRSpec.configuration.redis = @redis

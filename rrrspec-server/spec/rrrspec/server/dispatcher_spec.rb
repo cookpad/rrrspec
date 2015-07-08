@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module RRRSpec
   module Server
-    describe Dispatcher do
+    RSpec.describe Dispatcher do
       before do
         RRRSpec.configuration = Configuration.new
         RRRSpec.configuration.redis = @redis

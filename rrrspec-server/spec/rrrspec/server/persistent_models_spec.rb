@@ -3,7 +3,7 @@ require 'spec_helper'
 module RRRSpec
   module Server
     module Persistence
-      describe Taskset do
+      RSpec.describe Taskset do
         before do
           RRRSpec.configuration = ServerConfiguration.new
           RRRSpec.configuration.redis = @redis

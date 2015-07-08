@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module RRRSpec
   module Server
-    describe Arbiter do
+    RSpec.describe Arbiter do
       before do
         RRRSpec.configuration = Configuration.new
         RRRSpec.configuration.redis = @redis

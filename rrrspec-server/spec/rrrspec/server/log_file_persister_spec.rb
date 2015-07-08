@@ -10,7 +10,7 @@ module RRRSpec
       attr_accessor :key
     end
 
-    describe LogFilePersister do
+    RSpec.describe LogFilePersister do
       before do
         RRRSpec.configuration = ServerConfiguration.new
         RRRSpec.configuration.execute_log_text_path = '/tmp/log_path'

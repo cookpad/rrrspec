@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module RRRSpec
-  describe "Web" do
+  RSpec.describe Web do
     before do
       RRRSpec.configuration = Web::WebConfiguration.new
       RRRSpec.configuration.redis = @redis
