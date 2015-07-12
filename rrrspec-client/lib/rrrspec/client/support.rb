@@ -40,7 +40,29 @@ module RRRSpec
         return taskset
       end
 
-      def show_result(taskset, verbose=false)
+      def show_result(taskset, verbose=false, show_errors=false)
+        if show_errors
+          puts "Failed Tasks:\n\n"
+          taskset.tasks.each do |task|
+            if task.status == "failed"
+              trial = task.trials.detect { |t| t.status == "failed" }
+              stdout = trial.stdout
+              puts "Task: #{task.spec_file}\n\n"
+              unless stdout.blank?
+                puts "\tSTDOUT:"
+                stdout.each_line { |line| puts "\t#{line}" }
+              end
+              stderr = trial.stderr
+              unless stderr.blank?
+                puts "STDERR:"
+                stderr.each_line { |line| puts "\t#{line}" }
+              end
+              puts "\n"
+            end
+          end
+          puts
+        end
+
         puts "Status:    #{taskset.status}"
         puts "Created:   #{taskset.created_at}"
         puts "Finished:  #{taskset.finished_at}"
@@ -52,7 +74,7 @@ module RRRSpec
           puts
 
           puts "Log:"
-          taskset.log.split("\n").each { |line| puts "\t#{line}" }
+          taskset.log.each_line { |line| puts "\t#{line}" }
           puts
 
           puts "Workers:"
@@ -63,7 +85,7 @@ module RRRSpec
             puts "\tSetup Finished: #{worker_log.setup_finished_at}"
             puts "\tFinished:       #{worker_log.finished_at}"
             puts "\tLog:"
-            worker_log.log.split("\n").each { |line| puts "\t\t#{line}" }
+            worker_log.log.each_line { |line| puts "\t\t#{line}" }
           end
           puts
 
@@ -76,7 +98,7 @@ module RRRSpec
               puts "\t\t#{trial.key}"
             end
             puts "\tLog:"
-            slave.log.split("\n").each { |line| puts "\t\t#{line}" }
+            slave.log.each_line { |line| puts "\t\t#{line}" }
           end
           puts
 
@@ -98,12 +120,12 @@ module RRRSpec
               stdout = trial.stdout
               if stdout
                 puts "\t\tSTDOUT:"
-                stdout.split("\n").each { |line| puts "\t\t\t#{line}" }
+                stdout.each_line { |line| puts "\t\t\t#{line}" }
               end
               stderr = trial.stderr
               if stderr
                 puts "\t\tSTDERR:"
-                stderr.split("\n").each { |line| puts "\t\t\t#{line}" }
+                stderr.each_line { |line| puts "\t\t\t#{line}" }
               end
             end
           end
