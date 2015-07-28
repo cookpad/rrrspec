@@ -9,6 +9,7 @@ module RRRSpec
         @configuration = RSpec.configuration
         @world = RSpec.world
         @before_suite_run = false
+        @after_suite_run = false
       end
 
       def exc_safe_replace_stdouts
@@ -36,10 +37,17 @@ module RRRSpec
             @configuration.files_to_run = [filepath]
             @configuration.load_spec_files
             @world.announce_filters
+
             unless @before_suite_run
               run_before_suite_hooks
               @before_suite_run = true
             end
+
+            unless @after_suite_run
+              at_exit { run_after_suite_hooks }
+              @after_suite_run = true
+            end
+
             status = true
           rescue Exception
             $stdout.puts $!
@@ -80,6 +88,14 @@ module RRRSpec
 
       def run_before_suite_hooks
         hooks = @configuration.instance_variable_get(:@before_suite_hooks)
+        hook_context = RSpec::Core::SuiteHookContext.new
+        hooks.each do |h|
+          h.run(hook_context)
+        end
+      end
+
+      def run_after_suite_hooks
+        hooks = @configuration.instance_variable_get(:@after_suite_hooks)
         hook_context = RSpec::Core::SuiteHookContext.new
         hooks.each do |h|
           h.run(hook_context)
