@@ -78,6 +78,9 @@ Install 'rrrspec-server'
     $ gem install rrrspec-server
 
 Create 'rrrspec-server-config.rb'
+    RRRSpec.configure do |conf|
+      conf.redis = { host: 'redisserver.local', port: 6379 }
+    end
 
     RRRSpec.configure(:server) do |conf|
       ActiveRecord::Base.default_timezone = :local
