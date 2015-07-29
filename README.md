@@ -49,7 +49,7 @@ Create '.rrrspec'
         --inplace
         --delete
       ).join(' ')
-    
+
       conf.spec_files = lambda do
         Dir.chdir(conf.packaging_dir) do
           Dir['spec/**{,/*/**}/*_spec.rb'].uniq
@@ -78,6 +78,7 @@ Install 'rrrspec-server'
     $ gem install rrrspec-server
 
 Create 'rrrspec-server-config.rb'
+
     RRRSpec.configure do |conf|
       conf.redis = { host: 'redisserver.local', port: 6379 }
     end
@@ -101,7 +102,7 @@ Create 'rrrspec-server-config.rb'
 
     RRRSpec.configure(:worker) do |conf|
       conf.redis = { host: 'redisserver.local', port: 6379 }
-    
+
       conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
       conf.rsync_options = %w(
         --compress
