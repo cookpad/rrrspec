@@ -58,6 +58,7 @@ module RRRSpec
           trial = Trial.create(task, @slave)
 
           @rspec_runner.reset
+          $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]: setting up #{task.spec_file}"
           status, outbuf, errbuf = @rspec_runner.setup(File.join(@working_path, task.spec_file))
           unless status
             trial.finish('error', outbuf, errbuf, nil, nil, nil)
@@ -69,6 +70,7 @@ module RRRSpec
 
           formatter = RedisReportingFormatter
           trial.start
+          $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]: running #{task.spec_file}"
           status, outbuf, errbuf = ExtremeTimeout::timeout(
             hard_timeout_sec, TIMEOUT_EXITCODE
           ) do
@@ -85,6 +87,8 @@ module RRRSpec
 
           ArbiterQueue.trial(trial)
         end
+      ensure
+        $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]"
       end
 
       class RedisReportingFormatter

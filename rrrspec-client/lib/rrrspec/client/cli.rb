@@ -129,7 +129,7 @@ module RRRSpec
 
       desc 'slave', 'run RRRSpec as a slave'
       def slave(working_dir=nil, taskset_key=nil)
-        $0 = 'rrrspec slave'
+        $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]"
         working_dir ||= ENV['RRRSPEC_WORKING_DIR']
         taskset_key ||= ENV['RRRSPEC_TASKSET_KEY']
         exit 1 unless taskset_key && working_dir
