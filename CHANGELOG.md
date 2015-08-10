@@ -1,3 +1,14 @@
+# 0.4.1
+## client
+- Add `--show-errors` option that shows outputs of failed examples
+- Show slave status as process name for admin
+
+## server
+- Nothing
+
+## web
+- Nothing
+
 # 0.4.0
 ## client
 - Nothing
