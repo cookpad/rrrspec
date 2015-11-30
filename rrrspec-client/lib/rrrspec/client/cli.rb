@@ -27,11 +27,15 @@ module RRRSpec
       option :'key-only', type: :boolean
       option :'rsync-name', type: :string, default: ENV['USER']
       option :'worker-type', type: :string
+      option :max_workers, type: :numeric, desc: 'Overwrite max_workers configuration'
       desc 'start', 'start RRRSpec'
       def start
         setup(ClientConfiguration.new)
         if options[:'worker-type']
           RRRSpec.configuration.worker_type = options[:'worker-type']
+        end
+        if options[:max_workers]
+          RRRSpec.configuration.max_workers = options[:max_workers]
         end
         taskset = Support.start_taskset(RRRSpec.configuration, options[:'rsync-name'])
         puts taskset.key
