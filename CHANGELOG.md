@@ -1,3 +1,13 @@
+# 0.4.2
+## client
+- Add `--max-workers` option to overwrite default max_workers
+
+## server
+- Nothing
+
+## web
+- Nothing
+
 # 0.4.1
 ## client
 - Add `--show-errors` option that shows outputs of failed examples
