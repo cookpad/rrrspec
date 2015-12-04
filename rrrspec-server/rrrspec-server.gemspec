@@ -36,5 +36,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "facter"
   spec.add_dependency "redis"
   spec.add_dependency "rrrspec-client"
-  spec.add_dependency "thor"
+  spec.add_dependency "thor", ">= 0.18.0"
 end
