@@ -97,7 +97,7 @@ Create 'rrrspec-server-config.rb'
         pool: 5,
         host: 'localhost'
       }
-      conf.execute_log_text_path = '/vol/rrrspec-log-texts'
+      conf.execute_log_text_path = '/tmp/rrrspec-log-texts'
     end
 
     RRRSpec.configure(:worker) do |conf|
