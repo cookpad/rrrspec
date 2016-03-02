@@ -1056,4 +1056,31 @@ module RRRSpec
       RRRSpec.redis.hmset(key, *estimation.to_a.flatten)
     end
   end
+
+  class WorkerLock
+    def initialize(hostname: RRRSpec.hostname, expire: 180)
+      @hostname = hostname
+      @expire = expire
+    end
+
+    def acquire(task)
+      key = make_key(task)
+      setnx_ok, _ = RRRSpec.redis.multi do |multi|
+        multi.setnx(key, 1)
+        multi.expire(key, @expire)
+      end
+      setnx_ok
+    end
+
+    def release(task)
+      key = make_key(task)
+      RRRSpec.redis.del(key)
+    end
+
+    private
+
+    def make_key(task)
+      RRRSpec.make_key('rrrspec', 'worker_lock', @hostname, task.key)
+    end
+  end
 end

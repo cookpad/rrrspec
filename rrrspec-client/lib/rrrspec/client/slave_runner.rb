@@ -22,6 +22,7 @@ module RRRSpec
         @unknown_spec_timeout_sec = @taskset.unknown_spec_timeout_sec
         @least_timeout_sec = @taskset.least_timeout_sec
         @worked_task_keys = Set.new
+        @worker_lock = WorkerLock.new
       end
 
       def work_loop
@@ -42,6 +43,7 @@ module RRRSpec
 
       def work
         task = @taskset.dequeue_task(@timeout)
+        worker_lock_acquired = false
         unless task
           @timeout = TASKQUEUE_ARBITER_TIMEOUT
           ArbiterQueue.check(@taskset)
@@ -49,9 +51,13 @@ module RRRSpec
           if @worked_task_keys.include?(task.key)
             @taskset.reversed_enqueue_task(task)
             return
+          elsif !@worker_lock.acquire(task)
+            @taskset.enqueue_task(task)
+            return
           else
             @worked_task_keys << task.key
           end
+          worker_lock_acquired = true
           return if task.status.present?
 
           @timeout = TASKQUEUE_TASK_TIMEOUT
@@ -89,6 +95,9 @@ module RRRSpec
         end
       ensure
         $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]"
+        if worker_lock_acquired
+          @worker_lock.release(task)
+        end
       end
 
       class RedisReportingFormatter
