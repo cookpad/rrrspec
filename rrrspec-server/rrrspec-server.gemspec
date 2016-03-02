@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "timecop"
-  spec.add_dependency "activerecord", ">= 4.0", "< 4.2"
+  spec.add_dependency "activerecord", "~> 4.2.0"
   spec.add_dependency "activerecord-import", "~> 0.4.1"
   spec.add_dependency "activesupport"
   spec.add_dependency "bundler"
