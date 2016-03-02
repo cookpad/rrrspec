@@ -18,4 +18,7 @@ RRRSpec.configure(:worker) do |conf|
   ).join(' ')
   conf.worker_type = 'default'
   conf.working_dir = '/tmp/working'
+  conf.slave_processes = 8
+  conf.stdout_path = '/dev/stdout'
+  conf.stderr_path = '/dev/stderr'
 end
