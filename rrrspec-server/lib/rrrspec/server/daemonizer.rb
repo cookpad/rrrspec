@@ -17,7 +17,6 @@ module RRRSpec
       end
       Process.daemon(false, true)
       File.write(pidfile, Process.pid.to_s)
-      File.umask(0)
       setup_signal_handlers
       setup_atexit_handlers(pidfile)
       monitor_fork do
