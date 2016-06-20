@@ -71,7 +71,7 @@ module RRRSpec
             h.delete('taskset')
             h.delete('trials')
             p_task = Persistence::Task.new(h)
-            p_task.taskset_id = p_taskset
+            p_task.taskset_id = p_taskset.id
             p_task
           end
           Persistence::Task.import(p_tasks)
@@ -92,8 +92,8 @@ module RRRSpec
               slave_key = h.delete('slave')['key']
               h.delete('task')
               p_trial = Persistence::Trial.new(h)
-              p_trial.task_id = p_task
-              p_trial.slave_id = p_slaves[slave_key]
+              p_trial.task_id = p_task.id
+              p_trial.slave_id = p_slaves[slave_key].id
 
               p_trials << p_trial
             end
@@ -109,7 +109,7 @@ module RRRSpec
             h.delete('worker')
             h.delete('taskset')
             p_worker_log = Persistence::WorkerLog.new(h)
-            p_worker_log.taskset_id = p_taskset
+            p_worker_log.taskset_id = p_taskset.id
             p_worker_log
           end
           Persistence::WorkerLog.import(p_worker_logs)
