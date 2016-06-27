@@ -1,5 +1,5 @@
 require 'rspec'
-require 'rspec/core/formatters/base_text_formatter'
+require 'rrrspec/client/base_text_formatter'
 
 module RRRSpec
   module Client
@@ -9,19 +9,23 @@ module RRRSpec
         @configuration = RSpec.configuration
         @world = RSpec.world
         @before_suite_run = false
+        @stdout_buffer = StringIO.new
+        @stderr_buffer = StringIO.new
       end
 
       def exc_safe_replace_stdouts
-        outbuf = ''
-        errbuf = ''
-        $stdout = StringIO.new(outbuf)
-        $stderr = StringIO.new(errbuf)
+        @stdout_buffer.string = ''
+        @stderr_buffer.string = ''
+        $stdout = @stdout_buffer
+        $stderr = @stderr_buffer
         begin
           yield
         rescue Exception
           $stdout.puts $!
           $stdout.puts $!.backtrace.join("\n")
         end
+        outbuf = @stdout_buffer.string
+        errbuf = @stderr_buffer.string
         [outbuf, errbuf]
       ensure
         $stdout = STDOUT
@@ -33,6 +37,9 @@ module RRRSpec
         outbuf, errbuf = exc_safe_replace_stdouts do
           begin
             @options.configure(@configuration)
+            @configuration.output_stream = $stdout
+            @configuration.error_stream = $stderr
+            @configuration.default_formatter = BaseTextFormatter
             @configuration.files_to_run = [filepath]
             @configuration.load_spec_files
             @world.announce_filters
@@ -54,9 +61,6 @@ module RRRSpec
       def run(*formatters)
         status = false
         outbuf, errbuf = exc_safe_replace_stdouts do
-          @configuration.output_stream = $stdout
-          @configuration.error_stream = $stderr
-          @configuration.add_formatter(RSpec::Core::Formatters::BaseTextFormatter)
           formatters.each do |formatter|
             @configuration.add_formatter(formatter)
           end
