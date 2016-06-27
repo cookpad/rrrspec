@@ -15,10 +15,7 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
 
   gemspec_dir = File.expand_path('..', __FILE__)
-  spec.files  = `git ls-files`.split($/).
-    map { |f| File.absolute_path(f) }.
-    select { |f| f.start_with?(gemspec_dir) }.
-    map { |f| Pathname(f).relative_path_from(Pathname(gemspec_dir)).to_s }
+  spec.files  = Dir['bin/*', 'lib/**/*.rb']
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
