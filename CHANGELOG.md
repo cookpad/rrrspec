@@ -1,3 +1,18 @@
+# 0.4.3
+## client
+- Fix dependency on thor
+- Fix output stream redirection
+    - When filters are configured, they initializes the reporter in setup phase
+    - So the output stream must be configured in setup phase
+
+## server
+- Fix dependency on thor
+- Use activerecord 4.2
+- Fix persister for activerecord-import >= 0.7.0
+
+## web
+- Use activerecord 4.2
+
 # 0.4.2
 ## client
 - Add `--max-workers` option to overwrite default max_workers
