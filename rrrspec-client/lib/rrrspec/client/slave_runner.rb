@@ -17,7 +17,10 @@ module RRRSpec
         @slave = slave
         @taskset = Taskset.new(taskset_key)
         @timeout = TASKQUEUE_TASK_TIMEOUT
-        @rspec_runner = RSpecRunner.new
+        @runners = Hash.new do |runners, file_ext|
+          runner_factory = RRRSpec::Registry.get_runner_factory(file_ext)
+          runners[file_ext] = runner_factory.create
+        end
         @working_path = File.join(working_dir, @taskset.rsync_name)
         @unknown_spec_timeout_sec = @taskset.unknown_spec_timeout_sec
         @least_timeout_sec = @taskset.least_timeout_sec
@@ -57,9 +60,12 @@ module RRRSpec
           @timeout = TASKQUEUE_TASK_TIMEOUT
           trial = Trial.create(task, @slave)
 
-          @rspec_runner.reset
+          task_file_ext = File.extname(task.spec_file)
+          runner = @runners[task_file_ext]
+
+          runner.reset
           $0 = "rrrspec slave[#{ENV['SLAVE_NUMBER']}]: setting up #{task.spec_file}"
-          status, outbuf, errbuf = @rspec_runner.setup(File.join(@working_path, task.spec_file))
+          status, outbuf, errbuf = runner.setup(File.join(@working_path, task.spec_file))
           unless status
             trial.finish('error', outbuf, errbuf, nil, nil, nil)
             ArbiterQueue.trial(trial)
@@ -75,7 +81,7 @@ module RRRSpec
             hard_timeout_sec, TIMEOUT_EXITCODE
           ) do
             Timeout::timeout(soft_timeout_sec, SoftTimeoutException) do
-              @rspec_runner.run(formatter)
+              runner.run(formatter)
             end
           end
           if status
@@ -130,6 +136,8 @@ module RRRSpec
 
           def example_failed(notification)
             @failed += 1
+            return if !notification.respond_to?(:exception)
+
             if notification.exception.is_a?(SoftTimeoutException)
               @timeout = true
             end
