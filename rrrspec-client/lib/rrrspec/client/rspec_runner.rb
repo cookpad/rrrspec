@@ -39,7 +39,7 @@ module RRRSpec
             @options.configure(@configuration)
             @configuration.output_stream = $stdout
             @configuration.error_stream = $stderr
-            @configuration.default_formatter = BaseTextFormatter
+            @configuration.add_formatter(BaseTextFormatter)
             @configuration.files_to_run = [filepath]
             @configuration.load_spec_files
             @world.announce_filters
