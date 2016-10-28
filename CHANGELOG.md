@@ -1,3 +1,13 @@
+# 0.4.4
+## client
+- Fix capturing output stream
+
+## server
+- Nothing
+
+## web
+- Nothing
+
 # 0.4.3
 ## client
 - Fix dependency on thor
