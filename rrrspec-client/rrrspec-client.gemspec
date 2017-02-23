@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "extreme_timeout", ">=0.3.2"
   spec.add_dependency "launchy"
   spec.add_dependency "redis"
-  spec.add_dependency "rspec", ">= 3.0"
+  spec.add_dependency "rspec", ">= 3.0", "< 3.5.0"
   spec.add_dependency "thor", ">= 0.18.0"
   spec.add_dependency "uuidtools"
   spec.add_dependency "tzinfo"
