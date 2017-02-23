@@ -1,27 +1,35 @@
-redis:
-  image: redis
-db:
-  image: mysql
-  environment:
-    - MYSQL_ROOT_PASSWORD=himitsu
-master:
-  build: .
-  command: local_test/run_master.sh
-  environment:
-    - DB_HOST=db
-    - DB_PASSWORD=himitsu
-    - REDIS_HOST=redis
-  links:
-    - redis
-    - db
-  ports:
-    - '3000:3000'
-worker:
-  build: .
-  command: local_test/run_worker.sh
-  environment:
-    - REDIS_HOST=redis
-    - MASTER_HOST=master
-  links:
-    - redis
-    - master
+version: "2"
+services:
+  redis:
+    image: redis
+  db:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=himitsu
+  master:
+    build: .
+    command: [./wait-for-mysql.sh, /bin/bash, local_test/run_master.sh]
+    environment:
+      - DB_HOST=db
+      - DB_PASSWORD=himitsu
+      - REDIS_HOST=redis
+    links:
+      - redis
+      - db
+    ports:
+      - '3000:3000'
+    depends_on:
+      - "redis"
+      - "db"
+  worker:
+    build: .
+    command: local_test/run_worker.sh
+    environment:
+      - REDIS_HOST=redis
+      - MASTER_HOST=master
+    links:
+      - redis
+      - master
+    depends_on:
+      - "redis"
+      - "master"
