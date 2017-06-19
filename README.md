@@ -3,7 +3,7 @@
 RRRSpec enables you to run RSpec in a distributed manner.
 
 This is developed for the purpose to obtain the fault-tolerance properties to
-process-failures, machine-failures, and unresponsivenss of processes in the
+process-failures, machine-failures, and unresponsiveness of processes in the
 automated testing process.
 
 RRRSpec is used in production as a CI service, running 60+ RSpec processes
