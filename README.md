@@ -134,6 +134,8 @@ Create 'rrrspec-server-config.rb'
 
     $ rrrspec-server worker --config=rrrspec-server-config.rb
 
+Note: You must be able to rsync files from the host where the server runs to the host where the worker runs, without being prompted to for a passphrase.
+
 ### Client
 
     $ bundle exec rrrspec-client start
