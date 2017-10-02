@@ -13,7 +13,10 @@ service ssh start
 trap 'at_exit' EXIT
 
 cd rrrspec-server
-bundle exec rake rrrspec:server:db:create rrrspec:server:db:migrate RRRSPEC_CONFIG_FILES=/app/local_test/server_config.rb
+until bundle exec rake rrrspec:server:db:create rrrspec:server:db:migrate RRRSPEC_CONFIG_FILES=/app/local_test/server_config.rb
+do
+       sleep 3
+done
 
 foreman start -f /app/local_test/Procfile.master &
 wait
