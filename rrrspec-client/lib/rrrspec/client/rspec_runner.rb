@@ -84,9 +84,19 @@ module RRRSpec
 
       def run_before_suite_hooks
         hooks = @configuration.instance_variable_get(:@before_suite_hooks)
-        hook_context = RSpec::Core::SuiteHookContext.new
         hooks.each do |h|
           h.run(hook_context)
+        end
+      end
+
+      def hook_context
+        @hook_context ||= begin
+          if RSpec::Core::Version::STRING < '3.5.3'
+            RSpec::Core::SuiteHookContext.new
+          else
+            RSpec::Core::SuiteHookContext
+              .new('before(:suite)', @configuration.reporter)
+          end
         end
       end
     end
