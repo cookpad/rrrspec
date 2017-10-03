@@ -34,9 +34,12 @@ Add this line to your application's Gemfile:
 
 Create '.rrrspec'
 
+    RRRSpec.configure do |conf|
+      conf.redis = { host: 'redisserver.local', port: 6379 }
+    end
+
     RRRSpec.configure(:client) do |conf|
       Time.zone_default = Time.find_zone('Asia/Tokyo')
-      conf.redis = { host: 'redisserver.local', port: 6379 }
 
       conf.packaging_dir = `git rev-parse --show-toplevel`.strip
       conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
@@ -95,9 +98,11 @@ Create 'rrrspec-server-config.rb'
         reconnect: false,
         database: 'rrrspec',
         pool: 5,
+        password: 'XXX',
         host: 'localhost'
       }
       conf.execute_log_text_path = '/tmp/rrrspec-log-texts'
+      conf.pidfile = "/tmp/rrrspec-server.pid"
     end
 
     RRRSpec.configure(:worker) do |conf|
@@ -116,19 +121,30 @@ Create 'rrrspec-server-config.rb'
 
       conf.working_dir = '/mnt/working'
       conf.worker_type = 'default'
+      conf.pidfile = "/tmp/rrrspec-worker.pid"
     end
 
 ## Usage
 
 ### Master and Workers
 
+    $ rake -f /path/to/rrrspec-server-X.X.X/tasks/db.rake rrrspec:server:db:create rrrspec:server:db:migrate RRRSPEC_CONFIG_FILES=rrrspec-server-config.rb
+
     $ rrrspec-server server --config=rrrspec-server-config.rb
 
     $ rrrspec-server worker --config=rrrspec-server-config.rb
 
+Note: You must be able to rsync files from the host where the server runs to the host where the worker runs, without being prompted to for a passphrase.
+
 ### Client
 
     $ bundle exec rrrspec-client start
+    ...
+    rrrspec:taskset:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+
+    $ bundle exec rrrspec-client waitfor rrrspec:taskset:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+
+    $ bundle exec rrrspec-client show rrrspec:taskset:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 
 ## Local test
 You can try RRRSpec locally using Docker.
