@@ -13,6 +13,10 @@ service ssh start
 trap 'at_exit' EXIT
 
 cd rrrspec-server
+until MYSQL_PWD="$DB_PASSWORD" mysqladmin ping -h "$DB_HOST"
+do
+  sleep 3
+done
 bundle exec rake rrrspec:server:db:create rrrspec:server:db:migrate RRRSPEC_CONFIG_FILES=/app/local_test/server_config.rb
 
 foreman start -f /app/local_test/Procfile.master &
