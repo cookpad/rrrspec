@@ -12,6 +12,7 @@ module RRRSpec
       TASKQUEUE_ARBITER_TIMEOUT = 20
       TIMEOUT_EXITCODE = 42
       class SoftTimeoutException < Exception; end
+      class OutsideExamplesError < StandardError; end
 
       def initialize(slave, working_dir, taskset_key)
         @slave = slave
@@ -92,7 +93,9 @@ module RRRSpec
       end
 
       class RedisReportingFormatter
-        RSpec::Core::Formatters.register(self, :example_passed, :example_pending, :example_failed)
+        RSpec::Core::Formatters.register(
+          self, :example_passed, :example_pending, :example_failed, :dump_summary
+        )
 
         def initialize(_output)
           self.class.reset
@@ -108,6 +111,14 @@ module RRRSpec
 
         def example_failed(notification)
           self.class.example_failed(notification)
+        end
+
+        def dump_summary(notification)
+          # RSpec skips all examples when error outside examples occurred
+          # So we will raise error and make current taskset failure
+          if notification.errors_outside_of_examples_count > 0
+            raise OutsideExamplesError
+          end
         end
 
         module ClassMethods
