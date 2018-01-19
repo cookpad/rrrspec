@@ -23,7 +23,7 @@ COPY rrrspec-web/rrrspec-web.gemspec /app/rrrspec-web/rrrspec-web.gemspec
 COPY rrrspec-web/lib/rrrspec/web/version.rb /app/rrrspec-web/lib/rrrspec/web/version.rb
 COPY rrrspec-web/Gemfile /app/rrrspec-web/Gemfile
 
-RUN cd rrrspec-server && bundle install -j4
-RUN cd rrrspec-web && bundle install -j4
+RUN cd rrrspec-server && bundle install -j4 --gemfile Gemfile
+RUN cd rrrspec-web && bundle install -j4 --gemfile Gemfile
 
 COPY . /app
