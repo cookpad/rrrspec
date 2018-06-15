@@ -28,7 +28,7 @@ module RRRSpec
       def check_validity
         validity = super
 
-        unless Dir.exists?(packaging_dir)
+        unless Dir.exist?(packaging_dir)
           $stderr.puts("The packaging_dir does not exists: '#{packaging_dir}'")
           validity = false
         end
@@ -38,7 +38,7 @@ module RRRSpec
           validity = false
         else
           spec_files.each do |filepath|
-            unless File.exists?(File.join(packaging_dir, filepath))
+            unless File.exist?(File.join(packaging_dir, filepath))
               $stderr.puts("One of the spec_files does not exists '#{filepath}'")
               validity = false
             end
