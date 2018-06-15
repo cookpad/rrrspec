@@ -30,7 +30,7 @@ module RRRSpec
       loaded = []
       files.each do |filepath|
         filepath = File.absolute_path(filepath)
-        next unless File.exists?(filepath)
+        next unless File.exist?(filepath)
         $stderr.puts("Loading: #{filepath}")
         load filepath
         loaded << filepath

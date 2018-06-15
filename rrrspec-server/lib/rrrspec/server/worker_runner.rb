@@ -23,7 +23,7 @@ module RRRSpec
         logger.write("Start RSync")
 
         working_path = File.join(RRRSpec.configuration.working_dir, taskset.rsync_name)
-        FileUtils.mkdir_p(working_path) unless Dir.exists?(working_path)
+        FileUtils.mkdir_p(working_path) unless Dir.exist?(working_path)
         remote_path = File.join(RRRSpec.configuration.rsync_remote_path, taskset.rsync_name)
         command = "rsync #{RRRSpec.configuration.rsync_options} #{remote_path}/ #{working_path}"
 
