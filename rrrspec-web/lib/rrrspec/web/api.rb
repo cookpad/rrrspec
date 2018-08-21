@@ -16,7 +16,6 @@ module RRRSpec
       version 'v2', using: :path
       format :json
       formatter :json, OjFormatter
-      set :per_page, DEFAULT_PER_PAGE
 
       rescue_from(ActiveRecord::RecordNotFound) do
         [404, {}, ['']]
@@ -24,6 +23,7 @@ module RRRSpec
 
       # For Index
 
+      paginate per_page: DEFAULT_PER_PAGE
       get '/tasksets/actives' do
         ActiveTaskset.list.map do |taskset|
           {
@@ -35,6 +35,7 @@ module RRRSpec
         end
       end
 
+      paginate per_page: DEFAULT_PER_PAGE
       get '/tasksets/recents' do
         paginate(RRRSpec::Server::Persistence::Taskset.recent).map(&:as_json_for_index)
       end

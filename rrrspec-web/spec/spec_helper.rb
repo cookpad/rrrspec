@@ -28,7 +28,7 @@ RSpec.configure do |config|
     retry_count = 1
     loop do
       begin
-        redis.client.connect
+        redis.ping
         break
       rescue Redis::CannotConnectError
         if retry_count < 10
