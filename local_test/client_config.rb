@@ -22,6 +22,8 @@ RRRSpec.configure(:client) do |conf|
       'local_test/success_spec.rb',
       'local_test/fail_spec.rb',
       'local_test/timeout_spec.rb',
+      # this file is commented-out because it cause false positive of other tests.
+      # 'local_test/error_outside_examples_spec.rb',
     ]
   end
   conf.setup_command = <<-END
