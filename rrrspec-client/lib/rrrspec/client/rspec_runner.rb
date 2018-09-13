@@ -77,6 +77,7 @@ module RRRSpec
 
       def reset
         @world.example_groups.clear
+        @world.wants_to_quit = false
         @configuration.reset
       end
 
