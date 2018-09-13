@@ -92,7 +92,7 @@ module RRRSpec
       end
 
       class RedisReportingFormatter
-        RSpec::Core::Formatters.register(self, :example_passed, :example_pending, :example_failed)
+        RSpec::Core::Formatters.register(self, :example_passed, :example_pending, :example_failed, :dump_summary)
 
         def initialize(_output)
           self.class.reset
@@ -110,13 +110,18 @@ module RRRSpec
           self.class.example_failed(notification)
         end
 
+        def dump_summary(notification)
+          self.class.dump_summary(notification)
+        end
+
         module ClassMethods
-          attr_reader :passed, :pending, :failed
+          attr_reader :passed, :pending, :failed, :errors_outside_of_examples_count
 
           def reset
             @passed = 0
             @pending = 0
             @failed = 0
+            @errors_outside_of_examples_count = 0
             @timeout = false
           end
 
@@ -135,9 +140,15 @@ module RRRSpec
             end
           end
 
+          def dump_summary(notification)
+            @errors_outside_of_examples_count = notification.errors_outside_of_examples_count
+          end
+
           def status
             if @timeout
               'timeout'
+            elsif @errors_outside_of_examples_count != 0
+              'error'
             elsif @failed != 0
               'failed'
             elsif @pending != 0
