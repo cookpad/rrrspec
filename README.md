@@ -30,49 +30,53 @@ common pitfalls.
 
 Add this line to your application's Gemfile:
 
-    gem 'rrrspec-client'
+```ruby
+gem 'rrrspec-client'
+```
 
 Create '.rrrspec'
 
-    RRRSpec.configure do |conf|
-      conf.redis = { host: 'redisserver.local', port: 6379 }
+```ruby
+RRRSpec.configure do |conf|
+  conf.redis = { host: 'redisserver.local', port: 6379 }
+end
+
+RRRSpec.configure(:client) do |conf|
+  Time.zone_default = Time.find_zone('Asia/Tokyo')
+
+  conf.packaging_dir = `git rev-parse --show-toplevel`.strip
+  conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
+  conf.rsync_options = %w(
+    --compress
+    --times
+    --recursive
+    --links
+    --perms
+    --inplace
+    --delete
+  ).join(' ')
+
+  conf.spec_files = lambda do
+    Dir.chdir(conf.packaging_dir) do
+      Dir['spec/**{,/*/**}/*_spec.rb'].uniq
     end
+  end
 
-    RRRSpec.configure(:client) do |conf|
-      Time.zone_default = Time.find_zone('Asia/Tokyo')
+  conf.setup_command = <<-SETUP
+    bundle install
+  SETUP
+  conf.slave_command = <<-SLAVE
+    bundle exec rrrspec-client slave
+  SLAVE
 
-      conf.packaging_dir = `git rev-parse --show-toplevel`.strip
-      conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
-      conf.rsync_options = %w(
-        --compress
-        --times
-        --recursive
-        --links
-        --perms
-        --inplace
-        --delete
-      ).join(' ')
-
-      conf.spec_files = lambda do
-        Dir.chdir(conf.packaging_dir) do
-          Dir['spec/**{,/*/**}/*_spec.rb'].uniq
-        end
-      end
-
-      conf.setup_command = <<-SETUP
-        bundle install
-      SETUP
-      conf.slave_command = <<-SLAVE
-        bundle exec rrrspec-client slave
-      SLAVE
-
-      conf.taskset_class = 'myapplication'
-      conf.worker_type = 'default'
-      conf.max_workers = 10
-      conf.max_trials = 3
-      conf.unknown_spec_timeout_sec = 8 * 60
-      conf.least_timeout_sec = 60
-    end
+  conf.taskset_class = 'myapplication'
+  conf.worker_type = 'default'
+  conf.max_workers = 10
+  conf.max_trials = 3
+  conf.unknown_spec_timeout_sec = 8 * 60
+  conf.least_timeout_sec = 60
+end
+```
 
 ### Master and Workers
 
@@ -82,47 +86,49 @@ Install 'rrrspec-server'
 
 Create 'rrrspec-server-config.rb'
 
-    RRRSpec.configure do |conf|
-      conf.redis = { host: 'redisserver.local', port: 6379 }
-    end
+```ruby
+RRRSpec.configure do |conf|
+  conf.redis = { host: 'redisserver.local', port: 6379 }
+end
 
-    RRRSpec.configure(:server) do |conf|
-      ActiveRecord::Base.default_timezone = :local
-      conf.redis = { host: 'redisserver.local', port: 6379 }
+RRRSpec.configure(:server) do |conf|
+  ActiveRecord::Base.default_timezone = :local
+  conf.redis = { host: 'redisserver.local', port: 6379 }
 
-      conf.persistence_db = {
-        adapter: 'mysql2',
-        encoding: 'utf8mb4',
-        charset: 'utf8mb4',
-        collation: 'utf8mb4_general_ci',
-        reconnect: false,
-        database: 'rrrspec',
-        pool: 5,
-        password: 'XXX',
-        host: 'localhost'
-      }
-      conf.execute_log_text_path = '/tmp/rrrspec-log-texts'
-      conf.pidfile = "/tmp/rrrspec-server.pid"
-    end
+  conf.persistence_db = {
+    adapter: 'mysql2',
+    encoding: 'utf8mb4',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_general_ci',
+    reconnect: false,
+    database: 'rrrspec',
+    pool: 5,
+    password: 'XXX',
+    host: 'localhost'
+  }
+  conf.execute_log_text_path = '/tmp/rrrspec-log-texts'
+  conf.pidfile = "/tmp/rrrspec-server.pid"
+end
 
-    RRRSpec.configure(:worker) do |conf|
-      conf.redis = { host: 'redisserver.local', port: 6379 }
+RRRSpec.configure(:worker) do |conf|
+  conf.redis = { host: 'redisserver.local', port: 6379 }
 
-      conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
-      conf.rsync_options = %w(
-        --compress
-        --times
-        --recursive
-        --links
-        --perms
-        --inplace
-        --delete
-      ).join(' ')
+  conf.rsync_remote_path = 'rsyncserver.local:/mnt/rrrspec-rsync'
+  conf.rsync_options = %w(
+    --compress
+    --times
+    --recursive
+    --links
+    --perms
+    --inplace
+    --delete
+  ).join(' ')
 
-      conf.working_dir = '/mnt/working'
-      conf.worker_type = 'default'
-      conf.pidfile = "/tmp/rrrspec-worker.pid"
-    end
+  conf.working_dir = '/mnt/working'
+  conf.worker_type = 'default'
+  conf.pidfile = "/tmp/rrrspec-worker.pid"
+end
+```
 
 ## Usage
 
