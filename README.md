@@ -12,9 +12,9 @@ assertion errors, and segmentation faults.
 
 ## MAINTENANCE NOTICE
 
-As of Feb 2019, we, Cookpad, are not using RRRSpec internally. We may ocassionaly review and accept PRs, but note that this software is not under active maintainance.
+As of Feb 2019, we, Cookpad, are not using RRRSpec internally. We may ocassionally review and accept PRs, but note that this software is not under active maintainance.
 
-(Background: The circumstances has been changed since 2013. Modern IaaS providers such as AWS now provides a machine with many vCPUs under the cheap pricing. Also, Cookpad is working to split their largest Rails monolith application ([blog post :jp:](https://techlife.cookpad.com/entry/2018-odaiba-strategy)). Thus, we decided to stop operating RRRSpec cluster.)
+(Background: The circumstances has been changed since 2013. Modern IaaS providers such as AWS now provide machines with many vCPUs under cheap pricing. Also, Cookpad is working to split their largest Rails monolith application ([blog post :jp:](https://techlife.cookpad.com/entry/2018-odaiba-strategy)), and it makes the test suite small. Thus, we decided to stop operating RRRSpec cluster.)
 
 ## Features
 
