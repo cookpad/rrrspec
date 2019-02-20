@@ -1,3 +1,9 @@
+# 0.4.5
+
+## web
+
+- Bump grape gem for CVE-2018-3769 (#77, @yasaichi)
+
 # 0.4.4
 ## client
 - Fix capturing output stream
