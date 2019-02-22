@@ -1,3 +1,7 @@
+# 0.4.6
+
+Re-releasing due to fix inconsistency between the gems
+
 # 0.4.5
 
 ## web
