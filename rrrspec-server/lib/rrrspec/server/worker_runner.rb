@@ -178,9 +178,14 @@ module RRRSpec
 
       def work
         @worker.update_current_taskset(nil)
-        taskset = @worker.dequeue_taskset
-        worker_log = WorkerLog.create(@worker, taskset)
-        logger = TimedLogger.new(worker_log)
+
+        while true do
+          taskset = @worker.dequeue_taskset
+          worker_log = WorkerLog.create(@worker, taskset)
+          logger = TimedLogger.new(worker_log)
+
+          break if taskset.status == 'running'
+        end
 
         check = proc do
           unless taskset.status == 'running'
